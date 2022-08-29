@@ -8,4 +8,9 @@ notes:
 1. **make & create** can replace **generate**
 2. **make** $\neq$ **create**
 
-## 2.  
+## 2. subject & topic & issue
+The subject is broad and overarching, such as cooking. A topic within that subject could be baking bread. The issues could be, which type of bread to make, 
+
+## 3. scene & scenario
+1. scene correlates with specific location, it contains what exists and happen in the location.
+2. scenario correlates with virtual situation

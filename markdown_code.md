@@ -262,4 +262,12 @@
             b --> c
         ```    
     2. 思维导图
-16. 
+16. 在段落之间加空行：
+    <br>
+17. 在中文段落前空一个字：&emsp;
+    &emsp;啦啦啦能够滤除偏振光的滤镜叫做偏振镜。普通的偏振镜叫做线偏振镜（PL镜）。把偏振镜装到镜头的前端.
+18. 在中文段落前空两个字: &emsp;&emsp;
+   &emsp;&emsp;能够滤除偏振光的滤镜叫做偏振镜。普通的偏振镜叫做线偏振镜（PL镜）。把偏振镜装到镜头的前端。 
+   <br>
+   I am asd asd asd asd asd asd asd asd asd asd asd asd asd asd asd asd asd asd asd asd asd asd asd asd asd 
+19.  
