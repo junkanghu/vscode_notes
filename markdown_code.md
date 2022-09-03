@@ -160,7 +160,8 @@
        =8x+24 \\
        \end{aligned}
        $$
-       1. 左对齐(单个shift+4)
+       
+       2. 左对齐(单个shift+4)
        $
        \begin{aligned}
        y &=(x+5)^2-(x+1)^2 \\

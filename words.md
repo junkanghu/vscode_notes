@@ -30,7 +30,18 @@
     * point $\Rho$ satisfies $f(\Rho)=0$
 12. aforementioned
     * adj. 上述的
-13. 
+13. sth be encountered in ...
+    * 某事是在...过程中遇到的
+    * An eikonal equation is a non-linear first-order partial diffential eqution that is encountered in problems of wave propagation.
+14. without loss of generality
+    * 不失一般性
+    * Without loss of generality, ...
+15. sth tailored for ...
+    * 为...专门设计的某物
+    * a novel edge sanoking algorithm tailored for neural SDFs
+16. dimensionless
+    * adj. 无量纲的
+17. infinitesimally small 无穷小的
 
 ## term
 1. mat: 粗糙的
@@ -67,7 +78,15 @@
 21. unimodal
     * adj. 单峰的
     * unimodal density distribution; unimodal functions
-22. 
+22. quadratic
+    * adj. 二次的
+    * quadratic equation 
+23. 几个跟倍数有关的数
+    double adj. 双倍的   n. 双倍量；两个量组成的一组 v.使成双倍
+    triple 
+    quadruple
+    quintuple
+24. 
 
 ## daily using
 1. give it a take/try：试一试
