@@ -43,6 +43,9 @@
     * adj. 无量纲的
 17. infinitesimally small 无穷小的
 
+
+
+
 ## term
 1. mat: 粗糙的
 2. flash: 闪光灯、灯
@@ -86,7 +89,10 @@
     triple 
     quadruple
     quintuple
-24. 
+24. ROI=region of interest
+
+
+
 
 ## daily using
 1. give it a take/try：试一试
