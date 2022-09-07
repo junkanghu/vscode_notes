@@ -1,7 +1,14 @@
 # Ubuntu Commands
 
-## grep -E = egrep
+## common
+### ```curl cheat.sh/command``` 
+will give a brief "cheat sheet" with common examples of how to use a shell command.
 
+
+## grep -E = egrep
+``` shell
+egrep '\.MP4$|\.'
+```
 used for searching a string in the target string using regular expression
 
 ## |
