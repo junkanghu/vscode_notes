@@ -35,3 +35,9 @@
 
 ### 2.1 vimium
 show the help for available keys: ?
+
+## 3. about system
+1. cmd + +: increase the global size of any app
+   cmd + -: decrease the global size of any app
+2. 
+

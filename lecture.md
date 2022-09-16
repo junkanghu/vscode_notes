@@ -2,7 +2,7 @@
 # Lecture Notes
 ## games101 
 ### lecture 15
-1. irradiance是一块面积dA上获得的power($\Phi$)，其目的在于解释某一块面积接收到的能量；radiance是一块面积上往某一个方向角辐射的能量（既可以是朝向这块面积，代表接受能量；也可以是远离这块面积，代表辐射能量），在radiance的基础上加了方向角，又因为方向角与该面积的法线方向有夹角$\theta$，所以有一个cos$\theta$的乘积。（irradiance理解为某一块面积接收到的光的能量，irradiance理解为光传播时的某个方向的光能对一块有方向的面积辐射的能量）
+1. irradiance是一块面积dA上获得的power($\Phi$)，其目的在于解释某一块面积接收到的能量；radiance是一块面积上往某一个方向角辐射的能量（既可以是朝向这块面积，代表接受能量；也可以是远离这块面积，代表辐射能量），在radiance的基础上加了方向角，又因为方向角与该面积的法线方向有夹角$\theta$，所以有一个cos$\theta$的乘积。（irradiance理解为某一块面积接收到的光的能量，radiance理解为光传播时的某个方向的光能对一块有方向的面积辐射的能量）
    ![irradiance](./images/irradiance-radiance.png)
 2. BRDF(bidirectional reflectance distribution function)：代表了某个入射方向对某个出射方向radiance的贡献。
    ![brdf](./images/brdf.png)

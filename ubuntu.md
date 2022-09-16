@@ -4,6 +4,16 @@
 ### ```curl cheat.sh/command``` 
 will give a brief "cheat sheet" with common examples of how to use a shell command.
 
+### delete files with specific format
+``` shell
+ls | egrep "DSC0\d{4}.ARW" | xargs rm
+```
+
+### move files
+``` shell
+mv ./*.jpg ./relight
+```
+
 
 ## grep -E = egrep
 ``` shell
@@ -56,3 +66,7 @@ echo ${hu:m:n} # return the substring starting at index m and its length is n
 
 ### echo $# hu
 returns the length of the argument hu
+
+
+## ll = ls -l
+list the information of the file (including permission)

@@ -1,6 +1,66 @@
 [toc]
 # Notes for papers
 
+
+## Physg: Inverse Rendering with Spherical Gaussians for Physics-based Material Editing and Relighting
+
+### problems in previous works 
+
+### innovation
+
+
+### limitation
+1. Don't model self-occlusion or indirect illumination.
+
+### overview
+1. MLP for SDF function.
+2. SGs for environment map which represents the environment light.
+3. BRDF consists of spatially varying diffuse albedo and a shared monochrome isotropic specular component. The diffuse albedo $a$ is calculated by a MLP $\Phi$.
+   That is:
+   $$
+   f_r(\omega_o, \omega_i;x) = \frac{a}{\pi} + f_s(\omega_o, \omega_i;x)
+   $$
+   where:
+   $$
+   f_s(\omega_o, \omega_i;x) = M(\omega_o, \omega_i)D(h)
+   $$
+   In the BRDF euqtion, $f_s$ is represented by SGs. Besides, $\omega_i\cdot n$ is represented by a SG.
+4. 
+
+
+
+## Modeling Indirect Illumination for Inverse Rendering
+
+
+### some conceptions
+1. ray-sphere intersection
+   ![explainment](./images/sphere_intersection.png)
+   Here, the center of the sphere is at the origin of world coordinate. So, $Q=P$.
+   ``` python
+    cam_loc = cam_loc.unsqueeze(-1)
+    # directions are world coordinates
+    ray_cam_dot = torch.bmm(ray_directions, cam_loc).squeeze()
+    under_sqrt = ray_cam_dot ** 2 - (cam_loc.norm(2,1) ** 2 - r ** 2)
+
+    # Here the center of the sphere is the origin of the world coordinate
+    under_sqrt = under_sqrt.reshape(-1)
+    mask_intersect = under_sqrt > 0  # These ones greater than 0 can intersect sphere.
+
+    sphere_intersections = torch.zeros(n_imgs * n_pix, 2).cuda().float()
+    sphere_intersections[mask_intersect] = \
+        torch.sqrt(under_sqrt[mask_intersect]).unsqueeze(-1) * torch.Tensor([-1, 1]).cuda().float()
+    sphere_intersections[mask_intersect] -= ray_cam_dot.reshape(-1)[mask_intersect].unsqueeze(-1)
+   ```
+   In the code, *under_sqrt* is $\frac{b^2}{4} - ac$. To calculate for t, we have
+   $$
+   t = \frac{-b\pm \sqrt \Delta}{2a}
+   $$
+   We can know from the code that ```torch.sqrt(under_sqrt[mask_intersect]) * torch.Tensor([-1, 1])``` gets $\pm \Delta$. So by addition, we get the two ts.
+2. 
+
+
+
+
 ## IRON: Inverse Rendering by Optimizing Neural SDFs and Materials from Photometric Images
 
 ### problems in previous works
@@ -29,6 +89,8 @@
 ### problems
 1. equ(1): co-located flashlight and camera have the same direction?
 2. figure 2(a)?
+3. 什么是albedo，他代表着物体的颜色吗？diffuse 和 specular都有albedo, 课程里只提到diffuse有albedo？
+albedo是
 
 ---
 

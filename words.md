@@ -40,8 +40,12 @@
     * 为...专门设计的某物
     * a novel edge sanoking algorithm tailored for neural SDFs
 16. dimensionless
-    * adj. 无量纲的
+    * adj. 无量纲的 
 17. infinitesimally small 无穷小的
+18. from scratch
+    * 从头开始
+    * If we do not perform this initial optimization stage and instead optimize for surface rendering from scratch.a
+19. 
 
 
 
@@ -90,6 +94,9 @@
     quadruple
     quintuple
 24. ROI=region of interest
+25. zenith angle: 三维坐标系中的两个夹角中与z轴的$\theta$角
+    azimuth angle: 三维坐标系中的两个夹角中在xy平面上的$\phi$角
+26. 
 
 
 
