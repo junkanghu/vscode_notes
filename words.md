@@ -45,7 +45,10 @@
 18. from scratch
     * 从头开始
     * If we do not perform this initial optimization stage and instead optimize for surface rendering from scratch.a
-19. 
+19. ameliorate 
+    * vt. 改善
+    * We ameliorate this issue by ...
+20. a cutting-edge technique 尖端的技术
 
 
 
@@ -93,11 +96,14 @@
     triple 
     quadruple
     quintuple
-24. ROI=region of interest
+24. ROI = region of interest
 25. zenith angle: 三维坐标系中的两个夹角中与z轴的$\theta$角
     azimuth angle: 三维坐标系中的两个夹角中在xy平面上的$\phi$角
-26. 
+26. NDF = Normal Distribution Function
 
+### 形容video frame之间的不连续效果：
+1. flickering; flicker artifacts
+2. jittery artifacts
 
 
 

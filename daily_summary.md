@@ -47,11 +47,35 @@
    1. 在光源前面放置x方向的偏振片，使射出的只有x方向偏振的光，照射到物体表面产生反射光和漫反射光，在相机镜片处也放置x方向偏振的光；在光源前面放置y方向的偏振光可以得到
    2. 设备上的光源可以设置偏振，镜头也可以设置偏振。光源用来照射阴影部分消除阴影。
 3. 目的
-   1. 使用设备获得漫反射颜色对应的图像
+   1. 使用设备获得漫射颜色对应的图像
    2. 用现有模型建立基于这些图像的模型，观察是否符合物体原色（无阴影和反光），符合原色说明得到的漫反射分量是正确的，只有其正确才能去解耦出正确的反射分量
    3. 利用手机拍摄的图像（漫反射分量+反射分量）通过nerf重建颜色，并利用这个颜色和得到的真实漫反射颜色解耦出（利用物理光照模型）漫反射分量和反射分量，目的即是获得最终的反射分量。
 
 
-## 2022.8.26
+## 2022.9.23
 ### assigned
 ### finished
+### project pipeline
+1. take photos (natural light) with alignment which can be used to recover the true scale in the world. This alignment is to get the coordinates of the light sources in the real world.
+2. use the photos to reconstruct 3D structure to get the mesh which can be used to get normals and to get the poses.
+3. Use the rendering equation to recover the diffuse albedo and point light intensity using the images taken from polarized light and camera.
+
+step：
+1. 拍摄一组自然光照下的图像，用于3D重建以获得3D几何，其表示形式为mesh，数据文件为ply，其中含有3D点的顶点坐标（array）和边（一条边由3个顶点组成，这个array的shape为N*3，第二维表示的是三个顶点在第一个array的indices）。（重建几何的代码的数据读取部分必须被一模一样的移植到invrender中以保证读取的ply文件的有效性）
+2. 拍摄一组偏振片下的图像。
+3. rendering equation中，以拍摄的带shading的albedo作为出射光，以建模形成的30个点光源作为入射光，列一个最简单的rendering equation：
+$$
+L_{o,p}=\sum_{i=1}^{M}L_i\cdot(n_p\cdot\omega_i)\cdot\frac{\rho}{\pi}
+$$
+其中，$M$为光源的数量，$\omega_i$为第$i$个光源的入射方向。
+4. rendering equation中的$n$可以通过对mesh进行query得到，mesh的normal可以通过open3d获得：
+``` python
+import open3d as o3d
+import numpy as np
+mesh = o3d.io.read_triangle_mesh('./example.ply')
+mesh.compute_vertex_normals()
+triangle_normals = np.asarray(mesh.triangle_normals)
+vertex_normals = np.asarray(mesh.vertex_normals)
+```
+
+5. 

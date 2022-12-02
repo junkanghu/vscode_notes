@@ -19,7 +19,7 @@ mv ./*.jpg ./relight
 ``` shell
 egrep '\.MP4$|\.'
 ```
-used for searching a string in the target string using regular expression
+used for searching a string in the target string using regular expresion
 
 ## |
 ``` shell
@@ -70,3 +70,30 @@ returns the length of the argument hu
 
 ## ll = ls -l
 list the information of the file (including permission)
+
+## Modify files with specific extension under current directory
+``` shell
+find ./ -name "*.JPG" | awk -F "." '{print $2}' | xargs -i -t mv ./{}.JPG  ./{}.jpg
+```
+
+## Delete files with specific extension under current directory
+``` shell
+find . -name "*.ARW" |xargs rm -rfv
+find . -name "a*" |xargs rm -rfv
+```
+
+## count the files under the directory
+``` shell
+ls | wc -l
+```
+
+## modify file names
+``` shell
+i=100000001; for f in *.JPG; do mv "$f" ${i#1}.jpg; ((i++)); done
+```
+
+## 建立软链接
+``` shell
+ln -s source target
+```
+例如source为/dellnas/dataset/static_recon/Relight/junkangs/head_1118/（这个“/”不能缺，代表将整个head_1118文件夹转移到某个路径下）, target为/dellnas/home/hujunkang/data/（data这个文件夹必须存在，head_1118文件夹将会软链接到data文件夹下，名称为head_1118）。

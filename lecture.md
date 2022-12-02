@@ -105,7 +105,7 @@
          ![formula](./images/microfacet_brdf_formula.png))
          1. h：考虑某一个微表面能否把某一个入射方向反射到我们想要的出射方向上去，就是看固定的入射和出射方向的half vector（即h）是否与这个微表面的法线方向相同，若相同，则这个微表面能够实现我们想要的入射和出射，否则不能
          2. F(i,h)：考虑了根据不同的入射方向（与法线夹角不同）会反射不同能量的光线（**修正入射、出射方向**）
-         3. D(h)：表示法线分布，反映了有多少表面的法线分布是与half vector一致的（half vector是入射方向和出射方向的中间方向）(**修正法线分布**)
+         3. D(h)（NDF: Normal Distribution Function）：表示法线分布，反映了有多少表面的法线分布是与half vector一致的（half vector是入射方向和出射方向的中间方向）(可以这么理解：一块微表面由无数块镜面组成，给定入射方向和想要的出射方向（view direction），只有那些法线方向和half vector相同的镜面才可以将入射方向的光线反射到我们想要的出射方向上去，而D（h）正是反映在这块微表面上有多少的小镜面的法线方向与给定的出入射方向的half vector方向相同。当这样的小镜面越多的时候，代表微表面可以往view direction反射的能量越大，否则越小)(**修正法线分布**)
          4. G(i,o,h)：不同的微表面之间可能会互相遮挡光，导致有些微表面反射的光被阻挡，到不了我们想要的出射方向上去。当光线几乎平着打到表面上（grazing angle）时，容易发生shadowing-masking（**修正grazing angle**）
     7. Isotropic & Anisotropic Materials（另一种区分材质的方式）
          ![isotropic](./images/isotropic.png)
