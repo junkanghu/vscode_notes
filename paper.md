@@ -522,3 +522,37 @@ SIPR takes an encoder-decoder architecture to generate relit images from a singl
    2. illumination loss：将estimated light与gt算loss（需要乘上每个pixel的solid angle）
    3. re-rendering loss：将estimated light作为target light重新输入bottleneck，然后算relit image和input的loss。
    4. 
+
+## Single Image Portrait Relighting via Explicit Multiple Reflectance Channel Modeling
+
+### innovation
+
+#### problems in pervious work
+1. light stage之类采集数据的方法对用户不友好。虽然也有方法采用data distribution transfer的方法生成数据，但弊病是computational cost和poor performance wrt. specular and shadow。
+2. 有一些end-to-end的training方法，并没有explicitly consider specular and shadow，没法学出比较好的效果。
+3. 缺少explicitly考虑specular和shadow的supervision。
+
+#### improvements
+1. 针对1和2，explicitly modeling specular和shadow等reflectance。
+2. 针对3，创建了一个dataset。
+
+### brief summary
+Different from previous works using end-to-end neural networks, this paper explicitly models multiple reflectance channels(normal, albedo, parsing, shadow, specular) for single image portrait relighting, which is demonstrated to be effective for challenging effects like specular and shadow.
+
+### methodology
+1. 将input image输入De-lighting network，得到parsing、albedo、normal和predicted lighting。parsing不参与后续pipeline，这样做是模仿single image portrait relighting，为了使得网络能够更好地区分face的各个region，以获得更好的albedo；predicted light的生成方式也同single image portrait relighting，在bottleneck采用一个weighted average得到lighting，这个lighting也不用于后续的pipeline，作者说这样做可以增强训练稳定性。（**在这里，albedo和normal（geometry）被认为是intrinsic channels**）。
+2. step 1得到的normal和target lighting被输入SS network去获得shadow和specular（因为shadow和specular主要是由light和geometry决定的）。在SS network中为了确保light和geometry能够更好地发生作用，采用了一个LFM module（本质是一个self-attention）。
+3. 最后将albedo、normal、shadow、specular、target light输入composition network得到最终的relight结果。
+
+### detail
+1. 采用均匀光照照射脸部（洗干净没有油），以此直接拍摄multi-view images（拍到的就是albedo）。
+2. 利用商业软件*PhotoScan*和1中拍摄的images生成geometry（mesh）和texture map（albedo）。
+3. 利用template将mesh align到确定的坐标系下获得确定的pose信息。
+4. 利用*Blender*中的*Cycles rendering engine*和*BSDF shader*做渲染：
+   1. texture map被直接当成albedo输入其中。
+   2. 根据经验设置roughness=0.6，specular=0.5以渲染gt。
+   3. 在2的基础上设置specular=0进行渲染，然后将gt与没有specular的image相减得到specular map；在2的基础上设置shadow visibility=False进行渲染，与gt相减，然后转为grayscale获得shadow map（visualization时取inverse）。
+   4. 在texture map的基础上，manually选取不同的8个区域作为semantic（parsing） map。
+5. 在training时separately train各个network：
+   1. warm-up：先根据supervision train De-lighting net，然后train SS和composition。在train SS和composition时，SS的input使用的是gt albedo和light，composition的input使用全是gt。
+   2. 对De-lighting进行fine-tune：输入SS和composition的都是network predict的结果。首先对De-lighting net进行fine-tune（保持SS和composition不变）。（这样理解：在warm-up中，SS和composition的输入都是gt，所以它们在优化后都已经收敛了，只有De-lighting还未完全收敛，因此只需要对其进行fine-tune。换句话说，如果一开始将De-lighting的结果直接输入后续的net，训练就会较慢，或者说难以收敛。）
