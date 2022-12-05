@@ -126,7 +126,7 @@
             ![dimension](./images/dimension.png)
     9. Measuring BRDFs
          1. theoretically: 拿光源以不同的方向照射到一个点，同时拿相机在每个光源方向一定的前提下，拍摄不同方向的图像
-            ![measure](./images/measure_brdf.png)0
+            ![measure](./images/measure_brdf.png)
          2. actually：基于理论，由仪器实现
          3. improving efficiency：
             1. 若各向同性，只需要测量某个$\theta$即可知道所有相同$\theta$不同$\phi$的BRDF

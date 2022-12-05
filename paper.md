@@ -496,4 +496,29 @@ Lumos使用了非常多的loss，比如在synthetic-to-real adaption中使用的
 
 ### methodology
 
-### 思考
+### 
+
+
+## Single Image Portrait Relighting
+
+### innovation
+
+#### problems in previous work
+1. 之前生成不同lighting的image需要资深摄影师控制相机参数，非常复杂。
+2. physical-model-based inverse rendering方法，需要假设material（例如Lambertian）或者illumination（SH、SG），这不一定符合真实的情况。
+3. 
+
+#### improvements
+1. 因为不需要假设material和illumanation，本方法不会受到physical model的限制。
+
+### brief summary
+SIPR takes an encoder-decoder architecture to generate relit images from a single input image, which enables both estimating light and editing light in the bottleneck.
+
+### methodology
+1. 运用light stage生成OLAT dataset，然后利用HDR environment map去生成数据。（HDR environment map的每个pixel代表light stage中的某个光源，而基于light可以相加的特性，可以把environment map中的每个pixel代表的光源映射到light stage的light上，然后将那些image线性相加）。
+2. 网络结构为encoder-decoder，输入为single image，然后在bottleneck中输出estimated light并加入target light。在decoder处可以获得relit image。
+3. Loss
+   1. image loss：relit image和gt算loss（利用mask只算foreground）
+   2. illumination loss：将estimated light与gt算loss（需要乘上每个pixel的solid angle）
+   3. re-rendering loss：将estimated light作为target light重新输入bottleneck，然后算relit image和input的loss。
+   4. 
