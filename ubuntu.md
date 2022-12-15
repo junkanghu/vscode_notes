@@ -1,6 +1,29 @@
 [toc]
 # Ubuntu Commands
 
+## get home dir
+```shell
+$HOME # means the dir of home which can be print by echo $HOME
+```
+
+## shell shortcuts
+1. ctrl + u/k: 删除光标（cursor）前/后的所有内容
+2. ctrl + a/e：将光标移动到行首、尾
+3. alt + b/f：光标前/后移一个word
+4. ctrl + w：删除光标前一个单词
+5. ctrl + l：clear screen
+
+## back to the last dir from current dir
+```shell
+cd -
+```
+
+## watch the history command and re-execute again
+```shell
+history # watch the history command(each command with a number)
+history !n # get the commandkjjj(n is the number of the command)
+```
+
 ## ```curl cheat.sh/command``` 
 will give a brief "cheat sheet" with common examples of how to use a shell command.
 
@@ -121,3 +144,51 @@ chmod a=rwx file # 设置所有人对file有rwx权限
 chmod ug=rwx,o=x file # 设置ug权限为rwx，o权限为x
 
 ```
+
+## 搜索文本命令grep
+一、正则表达式（regular expression）
+1. 语法：
+   1. 由字符和操作符组成
+   2. 操作符：
+      note：当以下⼀些字符如’.’、’+’需要以其本来字符形状出现时，需要在其前⾯加⼀个’\’来转义，可以进⼀步认为，所有的字符若要以其本来意思出现时，都需要在其前⾯加⼀个反斜杠。
+      1. .：表示任何单个字符
+      2. [ ]：字符集，对单个字符给出取值范围。[abc]表示a、b、c中的⼀个字符；[a-z]表示a-z单个字符。
+      3. [^]：⾮字符集。[^abc]代表单个字符，其⾮a、b、c。
+      4. \*：表示“\*”前⼀个字符的0次或⽆限次扩展。如abc\*代表ab（0次），abc（1次），abcc（2次）等
+      5. +：表示“+”前⼀个字符出现1次或⽆限次扩展。
+      6. ？：表示“？”前⼀个字符0次或1次扩展
+      7. ｜：表示“｜”左右表达式任取其⼀。abc｜def表示abc或def
+      8. {m}：表示扩展“{}”前的那个字符m次。ab{2}c代表abbc
+      9. {m, n}：表示扩展“{}”前的那个字符m-n次（包含m、n），{:3}代表0次⾄3次。ab{1, 2}c代表abc、abbc
+      10. ^：相对于3未出现在“[]”中表示匹配⼀个字符串的开头。^abc代表身处⼀个字符串开头的“abc”字符串
+      11. $：匹配字符串结尾。abc$代表身处⼀个字符串结尾的“abc”字符串
+      12. ()：分组标记，内部只能使⽤“｜”。（abc）表示“abc”；（abc｜def）表示“abc”或“def”
+      13. \d：数字。等价于[0-9]。但是\d{3}代表的不是某⼀个数字重复3次，⽽是代表有连着的3个数字。
+      14. \w：单词字符。等价于[A-Za-z0-9_（下划线）]
+      note：当上⾯所述的*、+、？没有搭配具体的字符（如abc+）使⽤时，⽽是如[abc]+或[a-z]+或\d{3}这样出现时，代表的是括号中的任意单个字符的组合。
+2. example
+![RE](./images/RE.png)
+
+二、grep语法
+1. asdf 
+
+
+## 命令传参xargs
+1. 默认setting
+   1. xargs默认与管道搭配使用，即```xxx | xargs ...```
+   2. xargs默认的命令是echo，即若不指定执行的命令，默认执行echo。
+   3. xargs默认一次性接收前置命令的所有内容。
+   4. 输入xargs的内容可能包含space和换行，但是在xargs里面都会被转换成space。
+2. 读取某个文件，然后以指定格式输出
+![xargs](./images/xargs.png)
+   1. 当没有-n时，默认一下子读取所有的内容（由于setting的第4点，所以读取进来的内容本来可能含有space和换行，但是最后都被转换为space并输出）。
+   2. 当-n指定每次读取多少个以space分隔的内容后，每次只读取几个参数，次与次之间以换行分隔并打印。
+   3. setting默认以space或换行符分隔内容，但是可以以-d指定分隔符，使输入的内容以指定的分隔符分为，以space分隔的内容。
+3. 对每个输入内容执行一次指定的命令
+```shell
+ls *.jpg | xargs -n1 -I {} cp {} /data/images 
+# 
+```
+   1. -I代表每个输入内容都执行一次后面的命令
+   2. {}代表某一次执行命令时，输入命令的值
+1. 

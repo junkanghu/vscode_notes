@@ -410,7 +410,7 @@ loss：
 #### training
 1. 利用一个MLP，输入point coordinate，输出该point的density、normal和计算BRDF的参数（基于不同的BRDF计算模型输出不同的参数）。
 2. 利用ray marching，在pixel对应的ray上进行sampling（同nerf），然后将sample points输入MLP得到上述参数。
-3. 利用这些参数算出任何一个sample point的transmittance，先用这个transmittance算出light到该point的intensity（利用camera的volume rendering方法），然后利用该点的BRDF参数算出BRDF，然后用BRDF、normal、incident light、light direction（同view direction）根据PBR算出该点沿着camera ray方向射向camera的radiance（nerf中不经过如此复杂的建模过程，而是直接用MLP获得这个radiance）。
+3. 利用这些参数算出任何一个sample point的transmittance，先用这个transmittance算出light到该point的intensity（$L_i(x,\omega_{i})=\tau_{l}(x)L_l(x)$），然后利用该点的BRDF参数算出BRDF，然后用BRDF、normal、incident light、light direction（同view direction）根据PBR算出该点沿着camera ray方向射向camera的radiance（nerf中不经过如此复杂的建模过程，而是直接用MLP获得这个radiance）。
 4. 得到ray上每个点的radiance后，再利用nerf的方法进行rendering（根据sampling进行coarse-to-fine）。
 
 #### testing
@@ -435,8 +435,9 @@ loss：
 
 ### details
 
+---
 
-## Learning to Relight Portrait Images via a Virtual Light Stage and Synthetic-to-Real Adaptation
+## Lumos: Learning to Relight Portrait Images via a Virtual Light Stage and Synthetic-to-Real Adaptation
 
 ### innovation
 
@@ -474,6 +475,7 @@ Based on TR(total rendering), Lumos modifys the rendering network, takes two dif
 ### 思考
 Lumos使用了非常多的loss，比如在synthetic-to-real adaption中使用的对residual加一个regularization loss，本来或许可以用于所有residual，但是可能在experiment中作者发现某些地方加可能对实际效果有提升，于是最终就加了上去，有些地方没有提升，所以就没有加。
 
+---
 
 ## Neural Video Portrait Relighting in Real-time via Consistency Modeling
 
@@ -498,6 +500,7 @@ Lumos使用了非常多的loss，比如在synthetic-to-real adaption中使用的
 
 ### 
 
+---
 
 ## Single Image Portrait Relighting
 
@@ -523,6 +526,8 @@ SIPR takes an encoder-decoder architecture to generate relit images from a singl
    3. re-rendering loss：将estimated light作为target light重新输入bottleneck，然后算relit image和input的loss。
    4. 
 
+---
+
 ## Single Image Portrait Relighting via Explicit Multiple Reflectance Channel Modeling
 
 ### innovation
@@ -547,7 +552,7 @@ Different from previous works using end-to-end neural networks, this paper expli
 ### detail
 1. 采用均匀光照照射脸部（洗干净没有油），以此直接拍摄multi-view images（拍到的就是albedo）。
 2. 利用商业软件*PhotoScan*和1中拍摄的images生成geometry（mesh）和texture map（albedo）。
-3. 利用template将mesh align到确定的坐标系下获得确定的pose信息。
+3. 利用template将mesh align到确定的坐标系下获得确定的pose信息。(在MVS中是用过feature point将新的camera registrate到已经获得的世界坐标系中；但是在这里并不是以image的feature points去registrate，因为这里没有image，只有mesh，故只是用了一种mesh的registrate方法获得当前mesh的camera-to-world pose)
 4. 利用*Blender*中的*Cycles rendering engine*和*BSDF shader*做渲染：
    1. texture map被直接当成albedo输入其中。
    2. 根据经验设置roughness=0.6，specular=0.5以渲染gt。
@@ -556,3 +561,109 @@ Different from previous works using end-to-end neural networks, this paper expli
 5. 在training时separately train各个network：
    1. warm-up：先根据supervision train De-lighting net，然后train SS和composition。在train SS和composition时，SS的input使用的是gt albedo和light，composition的input使用全是gt。
    2. 对De-lighting进行fine-tune：输入SS和composition的都是network predict的结果。首先对De-lighting net进行fine-tune（保持SS和composition不变）。（这样理解：在warm-up中，SS和composition的输入都是gt，所以它们在优化后都已经收敛了，只有De-lighting还未完全收敛，因此只需要对其进行fine-tune。换句话说，如果一开始将De-lighting的结果直接输入后续的net，训练就会较慢，或者说难以收敛。）
+   3. Note：
+      1. 作者将同一个light下的multiple reflectance channel称为一个group($G=\{I, l, I_n, I_{sp}, I_{sh}, N, P\}$)。在warm up时只需要一个group的内容即可：I是用l relighting得到的，因此将I输入De-lighting net后，得到的estimated light, parsing, albedo, normal都可以直接用group中的内容进行监督；而在train SS时，输入SS的light为group中的gt light l和gt normal N, 得到的shadow和specular用group中的内容监督；train composition net时，输入其中的albedo, normal, shadow, specular, light（没有其余的target light，只有input的gt light）全部来源于group。
+      2. 但是在fine tune阶段，由于需要target light，因此需要两个group（除了light及其导致的不同的shadow和specular，其余都相同）来train。
+   4. 
+
+---
+
+## Total Relighting: Learning to Relight Portraits for Background Replacement
+
+### innovation
+
+#### problems in previous work
+
+#### improvements
+
+### brif summary
+
+### introduction 
+1. 介绍relighting的背景：什么是relighting（Compositing a person into a scene to look like they are really there）；其应用（smartphone photography、video conferencing、film-making）；介绍了film-making的具体做法，指出其无法保证light-consistency（新背景下的object看起来跟真的处于背景之中一样）。
+2. 列举了一些工作：relighting、estimate alpha matting and foreground colors、consider both foreground estimation and composite。指出它们由于lack explicit relighting step而无法得到photorealistic的结果。
+3. 介绍light stage做relighting的方法。指出其hardware成本高。（每个object都需要扫一组，但是TR只需要用synthetic数据train一个net就可以做到对每个object的估计）
+4. 介绍自己的工作。
+
+### related work
+1. image-based relighting
+2. portrait relighting
+3. alpha matting
+4. our approach
+
+### methodology
+
+---
+
+## Acquiring the Reflectance Field of a Human Face
+
+### methodology
+1. 用light stage拍摄OLAT照片。（light stage的灯覆盖了整个球面，其相当于一条按序点亮的灯带，按照经度绕完一圈后就按维度往下一点。每个灯的位置以$\theta \phi$表示，最终获得64*32个灯照明下的image）
+![light_stage](./images/light_stage.png)
+2. 对于每个camera view，记录当前camera view下每个pixel在64\*32个灯下的值，组成一张64*32的image，代表在当前view下，这个pixel对应的3D point在每个light下的reflectance。因为我们不知道3D点的normal，所以没办法用physical model来建模，但是我们在当前pixel看到的value是下面式子中除了$L_i$外的所有内容，而$L_i$是一个scale，所以相当于我们记录下了其它所有值的信息（在当前camera view下保持不变）。因此可以通过控制$L_i$的大小获得最终结果。
+$$
+L_o=\int{L_i \cdot f \cdot cos\theta \cdot \omega_{i}}
+$$
+总的来说，这张64*32的image代表了对于某个pixel来说，每个光照下的reflectance，其乘以illumination即可得到每个光照下的rendering结果，若全相加，代表是所有灯下的rendering结果。
+3. 上述可以做到在某个view下的relighting结果，但是做不到在novel view下的结果。此方法后续通过用cross-polarization将specular和diffuse分开来，然后再进行novel view下的relighting。
+
+---
+
+## DPR：Deep Single-Image Portrait Relighting
+
+### innovation
+
+#### problems in previous work
+1. 现有的image-based relighting方法估计的face geometry和reflectance details可能不准，导致后续的relighting结果not photo-realistic。
+2. 
+
+#### improvements
+1. 对于1利用合成数据集先让network学习如何relighting，然后利用GAN去生成realistic的结果。
+
+
+### brief summary
+DPR first generates a relighting dataset, then performs image-based relighting using an encoder-decoder architecture which manipulates SH-based lighting at the bottleneck.
+
+### methodology
+1. 利用Ratio Image-based Face Relighting方式生成relighting数据集（每张source image生成5张不同lighting下的relighting image）。
+![ratio_image](./images/ratio_image.png)
+其中R是albedo（文章假设人脸材质为albedo），f代表SH lighting和normal作用下的结果。
+   1. 其中的normal根据自己的算法获得。
+   2. source image的SH lighting通过SfSNet估计获得。
+   3. target image的lighting通过在一个SH lighting数据集里面sample获得。
+2. 网络使用Unet结构，在bottleneck处估计两个latent code，一个为$z_f$代表face information，$z_s$代表lighting feature（经过一个regression得到estimated SH lighting）。然后在bottleneck处输入target lighting，与$z_f$ concatenate输入decoder。
+![dpr](./images/DPR.png)
+3. loss：
+   1. image loss：predicted image和gt之间的L1 loss以及两张image的Laplacian（二阶梯度代表high frequency内容，包括edges）之间的loss。
+   2. GAN loss：由ratio image trick生成的dataset可能由于normal不准产生artifact，导致数据层面就有问题。注意到artifacts出现在local patch，因此加了patch GAN的loss去refine local detail。
+   3. latent code loss：给任意两张source image（face相同，lighting不同）经过encoder得到$z_f$，算两个$z_f$之间的loss。这个loss代表face相同的两张image的face information应该相同。
+4. training strategy：作者发现，如果一开始training就用skip connection，会导致被encoded在$z_f$中的face information减少，减少的information都是由于skip connection被分流出去。因此采用skip training方式，一开始先不用skip，然后随着iteration的增加逐步加skip connection直到最后全部加上去。
+
+### new knowledge
+1. 在同一个真实lighting condition下，相机过长的exposure time会导致image过亮，这可能导致估计SH时不准确（其根据image估计），即其无法反映真实的lighting condition。
+---
+
+## PhotoApp: Photorealistic Appearance Editing of Head Portraits
+
+### innovation
+
+#### problems in previous work
+1. dense light stage成本高，且无法捕捉in-the-wild images中的variations。
+2. 大多数supervised方法无法支持novel view，能支持novel view的方法并不photo-realistic。
+3. 虽然styleGAN可以没有direct supervision（没有算gt和predicted的直接的pixel-wise loss，而是用别的网络提了feature然后算loss），但是存在loss of quality。
+4. 基于OLAT的deep learning方法和Debevec那样的方法只能在inner face region实现好的效果，但是没办法在eyes和haircut方面实现好的效果。
+5. synthetic（利用albedo什么的去生成，类似Lumos）方法影响了relighting结果的photo-realistic。
+
+#### improvements
+1. 针对1没有用dense light stage，只用到了8个camera和150个RGB light，然后利用environment map去生成数据集。
+2. 针对2本方法实现了novel view。
+3. 针对5，本方法使用的不是合成数据集。
+
+### brief summary
+
+### methodology
+1. 将input image、target illumination、camera pose、binary input p（记录camera pose是否与input相同，用来控制相同pose下的内容一样）输入pspNet（pretrained，参数保持不变）得到18\*512的latent code。
+2. 然后将得到的latent code分成18个512维的latent code，分别代表不同frequency的features，针对每个separated latent code，有一个独立的PhotoApp net（以target illumination、camera pose、binary input p一起作为输入），得到不同frequency下的latent code，然后将它们concatenate输入styleGAN（pretrained，参数保持不变）得到relit image。（这里因为light stage用的是150个RGB light，所以environment map也应该是150*3的rgb image，这里将其flatten，成为450维的vector）。
+3. loss：
+   1. latent code loss：PhotoApp net将input image的latent representation映射为target image的latent representation，因此要与gt的latent representation算loss。
+   2. perceptual loss：predicted relit image与gt之间首先经过Alexnet算一个feature，然后算loss。
+4. 

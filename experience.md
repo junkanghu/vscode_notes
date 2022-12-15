@@ -62,3 +62,41 @@ After installing qt5 by ```brew install qt5```, the path of qt5 is at */opt/home
 export CMAKE_PREFIX_PATH=/opt/homebrew/Cellar/qt@5/5.15.5_1  
 cmake ../
 ```
+
+## ubuntu解压分卷压缩文件
+![zip](./images/zip.png)
+1. 运行
+```shell
+cat 368_OK.zip* > data.zip # 星号前是分卷压缩的文件名相同部分
+unzip -q data.zip # -q实现解压时不显示信息，提高压缩速度，当然可以去掉
+```
+2. 如果在unzip时出现```Damaged Zip archive```：
+```shell
+zip -FF broken.zip --out fixed.zip
+unzip fixed.zip
+```
+
+
+## ubuntu设置系统代理
+1. 打开zshrc
+```shell
+vi ~/.zshrc
+```
+2. 将以下内容加到zshrc中
+```shell
+export http_proxy=http://dnas.idr.ai:7890
+export https_proxy=http://dnas.idr.ai:7890
+export HTTP_PROXY=http://dnas.idr.ai:7890
+export HTTPS_PROXY=http://dnas.idr.ai:7890
+export no_proxy=http://gitlab.idr.ai
+```
+
+## ubuntu下载google driver上的public文件
+1. 右键点击想要下载的文件，点击*获取链接*，然后点击*复制链接*。
+2. 链接的格式一般如```https://drive.google.com/file/d/10clmresw01amm1PaYeGjA8zsEBew-eX3/view?usp=share_link```，我们需要的是fileid=```10clmresw01amm1PaYeGjA8zsEBew-eX3```。
+3. 然后在terminal运行：
+```shell
+wget --no-check-certificate 'https://docs.google.com/uc?export=download&id=FILEID' -O FILENAME
+wget --load-cookies /tmp/cookies.txt "https://docs.google.com/uc?export=download&confirm=$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://docs.google.com/uc?export=download&id=FILEID' -O- | sed -rn 's/.*confirm=([0-9A-Za-z_]+).*/\1\n/p')&id=FILEID" -O FILENAME && rm -rf /tmp/cookies.txt
+```
+4. 上面的命令一般用于下载小文件，下面的命令一般用于下载大文件（数据集之类的）。注意，两个命令中都存在FILEID（第一个命令有一处，第二个命令有两处）和FILENAME（两个命令分别各有一处），FILEID就是2中指的内容，FILENAME就是本地想要存取的路径和文件名（后缀一定要与源文件一样，名字可以改）。
