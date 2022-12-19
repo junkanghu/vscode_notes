@@ -154,4 +154,9 @@ actually, it's replacing the version in working directory with the version in th
 ## 9. clone repo from github
 If remote repo is in your own account, link will be automatically created, and you can modify and push.
 
-## 10.
+## Error solution
+1. git fatal: 拒绝合并无关的历史
+```shell
+git pull origin master --allow-unrelated-histories
+```
+2. 
