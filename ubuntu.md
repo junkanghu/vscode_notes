@@ -6,6 +6,11 @@
 $HOME # means the dir of home which can be print by echo $HOME
 ```
 
+## empty trash
+```shell
+sudo rm -rf ~/.local/share/Trash/*
+```
+
 ## shell shortcuts
 1. ctrl + u/k: 删除光标（cursor）前/后的所有内容
 2. ctrl + a/e：将光标移动到行首、尾
@@ -175,7 +180,7 @@ chmod ug=rwx,o=x file # 设置ug权限为rwx，o权限为x
 
 ## 命令传参xargs
 1. 默认setting
-   1. xargs默认与管道搭配使用，即```xxx | xargs ...```
+   1. xargs默认与管道搭配使用，即```xxx | xargs ...```，但是也可以接受用户的输入。
    2. xargs默认的命令是echo，即若不指定执行的命令，默认执行echo。
    3. xargs默认一次性接收前置命令的所有内容。
    4. 输入xargs的内容可能包含space和换行，但是在xargs里面都会被转换成space。
@@ -184,11 +189,21 @@ chmod ug=rwx,o=x file # 设置ug权限为rwx，o权限为x
    1. 当没有-n时，默认一下子读取所有的内容（由于setting的第4点，所以读取进来的内容本来可能含有space和换行，但是最后都被转换为space并输出）。
    2. 当-n指定每次读取多少个以space分隔的内容后，每次只读取几个参数，次与次之间以换行分隔并打印。
    3. setting默认以space或换行符分隔内容，但是可以以-d指定分隔符，使输入的内容以指定的分隔符分为，以space分隔的内容。
-3. 对每个输入内容执行一次指定的命令
+3. -I可以将xargs接受的输入传递给后一命令
 ```shell
 ls *.jpg | xargs -n1 -I {} cp {} /data/images 
+cat foo.txt | xargs -I file sh -c 'echo file; mkdir file'
 # 
 ```
-   1. -I代表每个输入内容都执行一次后面的命令
-   2. {}代表某一次执行命令时，输入命令的值
-1. 
+   1. -I代表将前一个命令输入到xargs中的内容替换到xargs后的命令当中（当xargs后的命令为mkdir这种只需要一个输入的情况时用不到-I(xxx|xargs mkdir即可)；但是cp这种命令后续有两个参数，为了指定传参的位置，必须要用-I来指定传参位置）
+   2. {}配合-I使用，将xargs接受的参数传入到后续命令当中
+   3. 当xargs后有多个命令同时执行时，需要用某个变量名（上面为“file”）而不是{}。
+4. -p 和 -t
+-p即为print，代表每次执行命令前打印要执行的命令并询问一下用户是否执行（用户输入yes才会执行）；-t在打印要执行的命令后直接执行，不需要用户输入。
+5. 使用 -0配合find命令使用
+   1. xargs默认以space作为分隔符，这使得它无法处理一下文件名，因为文件名中可能包含一些空格。一般的文件名都通过find来获得，这时可以配合find一起使用，以专门处理文件名。find命令中的“-print0”可以将获得的文件名以“\0”（即null）分隔，这保证了文件名中的space仍然存在。而在xargs中可以指定以null为分隔符而不是space，以处理这种文件名中有space的情况。
+   ![-0]
+   ```shell
+   find /path -type f -print0 | xargs -0 rm
+   ```
+6. 
