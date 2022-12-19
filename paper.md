@@ -662,8 +662,56 @@ DPR first generates a relighting dataset, then performs image-based relighting u
 
 ### methodology
 1. 将input image、target illumination、camera pose、binary input p（记录camera pose是否与input相同，用来控制相同pose下的内容一样）输入pspNet（pretrained，参数保持不变）得到18\*512的latent code。
-2. 然后将得到的latent code分成18个512维的latent code，分别代表不同frequency的features，针对每个separated latent code，有一个独立的PhotoApp net（以target illumination、camera pose、binary input p一起作为输入），得到不同frequency下的latent code，然后将它们concatenate输入styleGAN（pretrained，参数保持不变）得到relit image。（这里因为light stage用的是150个RGB light，所以environment map也应该是150*3的rgb image，这里将其flatten，成为450维的vector）。
+2. 然后将得到的latent code分成18个512维的latent code，分别代表不frequency的features，针对每个separated latent code，有一个独立的PhotoApp net（以target illumination、camera pose、binary input p一起作为输入），得到不同frequency下的latent code，然后将它们concatenate输入styleGAN（pretrained，参数保持不变）得到relit image。（这里因为light stage用的是150个RGB light，所以environment map也应该是150*3的rgb image，这里将其flatten，成为450维的vector）。
 3. loss：
    1. latent code loss：PhotoApp net将input image的latent representation映射为target image的latent representation，因此要与gt的latent representation算loss。
    2. perceptual loss：predicted relit image与gt之间首先经过Alexnet算一个feature，然后算loss。
 4. 
+
+---
+
+## High-Res Facial Appearance Capture from Polarized Smartphone Images
+
+### innovation
+
+#### problems in previous work
+1. light stage with polarizers采集数据来恢复材质的方法非常unfriendly to amateurs。
+
+#### improvements
+1. 只用一个手机采用cross-polarization和parallel-polarization的方法获得diffuse和specular分量（disentangle）。capture setting非常友好。
+
+### introduction
+1. 第一段：介绍背景。硬件发展地比较好，激发了做数字人的热潮。但是relighting under arbitrary viewpoints with different lighting conditions非常难。指出传统的用light stage的方法非常复杂（引出问题），因此本文章要在保证relighting结果较好的情况下简化capture process（最主要的创新点，简化了，且证明可行）。
+2. 第二段：第一段只是用一句话说了light stage的复杂，第二段细化了这种setting是怎么做的，然后再次说明很复杂。
+3. 第三段：引出自己的方法（拍摄简述，后续要得到albedo、specular等），首先就是强调拍摄简单（only a smart phone）。最后说明自己的方法产生的各种material参数，可以很好地支持一些工作，如editable等。
+4. In summary，总结一下contributions：
+   1. capture setting使得能够separate diffuse和specular。
+   2. co-located camera和light（感觉不像contributions）
+   3. coarse-to-fine optimization for texture of different resolution using mipmap。（可以提高texture的sharpness，即可以获得high-resolution的texture）
+
+### related work
+1. polarizaton：最大创新点。指出polarization的方法主要基于specular不改变polarization方向这个事实。然后列举了几篇文章的方法。
+2. lightstage capture systems：先介绍light stage来源。然后指出问题：拍摄时间长；给muitiple camera和light设置polarizer非常challenging。然后列举一些利用light stage的方法。最后还是强调拍摄设备非常复杂。
+3. differentiable rendering：指出recently work极大推动了relighting的发展。列举几篇这个方面的工作，指出他们侧重于shape reconstruction，但是本篇文章可以基于一些效果非常好的reconstruction方法去重建shape，可以更侧重于材质的恢复。再指出一些工作用complex lighting setting，不利于恢复材质。
+4. deep learning-based approaches：列举一些用deep learning的方法。
+
+summary：在介绍各种technics时，除了要介绍其基本原理，还要引出一些文章，最后能批判地要批判他们。
+
+### brief summary
+Due to the high cost of previous hardware, PolFace proposes to capture face data only via a smartphone with polarizers, which not only simplifys the cpature process, but ensures the accurate disentanglement of diffuse and specular material attributes.
+
+### methodology
+1. Data capture:
+   1. 拍摄两段视频（一段cross-polarization、一段parrallel-polarization）和一些photographs，它们一起用于shape reconstruction。拍摄photograph是因为作者认为，photograph的质量更高，要用它来恢复材质，而video主要用于shape reconstruction。且所有拍摄的light均只来自于flashlight（近似于point light）。
+   2. 用这些数据首先重建一个coarse mesh。然后将其fit到一个FLAME model上获得更精确的geometry信息，进而获得更加精确的UV parameterization。
+   3. 作者认为polarizers会对不同wavelength的light产生不同的attenuation，因此使用一个colorchecker board去colibrate color（affine transformation）。
+   4. 此外作者认为flashlight不完全是一个point light，因为hardware原因其在某些方向会被遮挡，导致有些surface point接收的光不能完全用一个point light来计算（实际上没有接收到所有的光，只接收到一些特定方向的光），所以作者使用一个per-pixel的light attenuation map来建模（与render结果相乘来近似，因为render结果是用point light获得的，而实际场景非point light，所以要在render结果基础上attenuate）。为什么可以这样来model：因为对于image plane，每个pixel对应的surface point，其跟光源的相对位置是固定的（除去distance因素），所以每次拍摄的image，其同一个pixel上的surface point都接收了同样的光，乘以attenuation只是将光的比例缩小，来建模那些实际point light没有射到点上的光线。
+   5. video中每10-frame抽取a frame（基于sharpness，其由laplacian衡量）。由于photograph时的light比video亮，因此要把iso和光圈调小，使得它们的亮度相似。
+2. geometry reconstruction：用Agisoft Metashape重建。
+3. BRDF：考虑了SSS
+4. optimization：
+   1. train两个部分都采用coarse-to-fine的方式，每次从512*512 resolution先train，然后resize继续train直到4096。所以train的内容全部在texture space，即texture map的内容是trainable 参数。首先train albedo部分，收敛后固定，然后train specular部分。
+   2. 作者考虑到某些拍摄的image中某些pixel对应的部分刚好是在grazing angle下得到的，这样会影响image的quality，因此这些pixel的train weight应该被降低，即view和normal夹角越大的pixel权重越小，据此可以获得一张image，其每个pixel代表weight。此外，作者还考虑拍摄的distance问题，如果对于一个pixel，其对应的mipmap的level比较大（resolution比较低），代表其距离较远，实际的detail较少，那么其不应该被用于优化。实际过程中，作者只取了level 0来算weight map。
+
+### limitation
+1. 虽然只用一个手机拍摄条件比lightstage要好，但是要保证environment illumination近乎全黑实际上条件较为苛刻。此外，还需要保证拍摄的地点不能有一些反光强的物体，比如不能有玻璃、镜子等，否则没办法保证每个pixel的color都是来自于surface point。

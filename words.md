@@ -100,6 +100,7 @@
 25. zenith angle: 三维坐标系中的两个夹角中与z轴的$\theta$角
     azimuth angle: 三维坐标系中的两个夹角中在xy平面上的$\phi$角
 26. NDF = Normal Distribution Function
+27. analysis-by-synthesis approach：指的是采用model去reproduce一张image与gt算loss的这种估计model parameters的方法。
 
 ### 形容video frame之间的不连续效果：
 1. flickering; flicker artifacts
