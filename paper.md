@@ -715,3 +715,36 @@ Due to the high cost of previous hardware, PolFace proposes to capture face data
 
 ### limitation
 1. 虽然只用一个手机拍摄条件比lightstage要好，但是要保证environment illumination近乎全黑实际上条件较为苛刻。此外，还需要保证拍摄的地点不能有一些反光强的物体，比如不能有玻璃、镜子等，否则没办法保证每个pixel的color都是来自于surface point。
+
+
+## Deferred Neural Rendering: Image Synthesis using Neural Textures
+
+### innovation
+
+#### problems in pervious work
+1. 一般的rendering pipeline都需要输入良好的3D geometry、material、light等，这些以前通常由skilled artist来制作。虽然3D reconstruction可以重建这些内容，但是imperfect（noisy、over-smoothed、holes），这会导致rendering结果not photo-realistic。
+
+#### improvements
+1. 本篇文章最大创新点（经常重复）就是在imperfect geometry（几乎可以认为所有基于重建得到的geometry都是imperfect的）的前提下rendering效果不错。作者认为texture中包含可以弥补geometry imperfections的信息，但是traditional texture特性（normal、albedo etc）的information非常low-dimensional，因此其提出使用learnable feature vectors。（作者在ablation证明了即使geometry resolution非常小，rendering结果也不错）。此外由于Neural Rederer是采用conv的，会利用到周围pixel的信息，因此也可以弥补geometry的imperfection（以前的方法有用per-pixel的conv来得到pixel的value）。
+
+### introduction
+1. 第一段：介绍graphic rendering pipeline需要well-defined data（geometry、material、illumination等），以前通常通过skilled artist manually获得。现在通过3D重建可以获得，但是geometry not perfect。
+2. 第二段：引出算法的启蒙。与其解决geometry的imperfection，不如修改rendering pipeline使rendering结果更好。然后介绍neural texture的意思（与传统texture map的区别）。
+3. 第三段：说明本方法可以有很多application，比如view synthesis、scene editing。然后说明自己做了哪些实验证明这些application的效果不错。
+4. 第四段：说明本方法在video中效果好，即temporally coherent。因为本方法基于3D space进行而不是image进行，因此可以获得时序上连续的结果。
+
+### related work
+1. Novel-view Synthesis from RGB-D Scans
+2. Image-based Rendering（Debevec那种image blending）
+3. Light-field Rendering（PBR model-based）
+4. Image Synthesis using Neural Networks
+5. View Synthesis using Neural Networks
+
+### methodology
+1. 视频抽帧用于colmap重建，得到pose和mesh以及texture mapping关系。
+2. 对于每个view，先做rasterize。然后train一个texture map，其中存储了feature vectors。对于rasterize的image处的每个pixel，通过mapping关系获得其feature vector，然后将整张feature image输入Deferred Render得到最终的预测结果。
+3. 对于texture map的resolution：traditional graphics中使用mipmap来解决over-sampling和under-sampling问题，这里也参考了mipmap。首先取low-resolution（512*512）的texture map，然后通过upsampling得到high-resolution的map，对于每张image，在每个level上都做sample然后输入renderer计算color值，最终的color值是由所有level的color值相加。low-resolution的map成为coarse level，high resolution成为finer level。
+4. 在Renderer中，同时输入view direction（其由SH encode）可以控制view-dependent内容。
+
+### limitation
+1. 没办法做relighting（appearance editing）
