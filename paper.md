@@ -748,3 +748,22 @@ Due to the high cost of previous hardware, PolFace proposes to capture face data
 
 ### limitation
 1. 没办法做relighting（appearance editing）
+
+---
+
+## Deferred Neural Rendering: Image Synthesis using Neural Textures
+
+### innovation
+
+#### problems in previous work
+
+#### improvements
+
+### introduction
+
+### related work
+
+### methodology
+
+### limitation
+1. 在设计网络时，没有explicitly考虑view direction。作者认为一个renderer没办法model所有view的结果，因此只是将所有的view分为13个partition，然后对每个partition train一个renderer。（或许是作者试过view direction的model，但是效果不好）。
