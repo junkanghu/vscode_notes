@@ -740,6 +740,9 @@ Due to the high cost of previous hardware, PolFace proposes to capture face data
 4. Image Synthesis using Neural Networks
 5. View Synthesis using Neural Networks
 
+### brief summary
+
+
 ### methodology
 1. 视频抽帧用于colmap重建，得到pose和mesh以及texture mapping关系。
 2. 对于每个view，先做rasterize。然后train一个texture map，其中存储了feature vectors。对于rasterize的image处的每个pixel，通过mapping关系获得其feature vector，然后将整张feature image输入Deferred Render得到最终的预测结果。
@@ -756,14 +759,39 @@ Due to the high cost of previous hardware, PolFace proposes to capture face data
 ### innovation
 
 #### problems in previous work
+1. model-based solutions没法exactly recover each component（material、geometry、lighting）。
+2. image-based solutions（特指Debevec的方法）需要dense and accurate samplings，难以获得。
 
 #### improvements
+1. 针对1的问题，作者选择使用image-based方法去做。针对2的问题，作者用了另一种image-based方法，不需要dense sampings。
 
 ### introduction
+1. 第一段：介绍背景。简述model-based approach是怎么做的，指出其问题。简述image-based approach怎么做，指出其问题。
+2. 第二段：首先一句话介绍自己的方法优越性。然后按first、second、finally介绍自己方法并指出radiance cues的重要性。
+3. 第三段：说明如果geometry太差或者light transport effects过于complex，会导致neural textures需要太多channel或者neural renderer需要特别多的parameter来保证学习到这种information，然后引出自己的方法；指出自己做的实验证明了自己的方法有效性；进而引出自己的augmentation方法。
+4. 第四段（contributions）：
+   1. a novel system（能够整体上实现什么）
+   2. a neural renderer（能够解决不同的lighting conditions）
+   3. a novel acquisition（easy to do）
+   4. an augmentation method（能够以不同的light做relighting）
 
 ### related work
+1. model-based solutions：分为shape modeling、appearance modeling和joint modeling of shape and appearance。
+   1. shape modeling没有model view dependent appearance。
+   2. appearance modeling只能基于accurate geometry。
+   3. joint modeling的精确度局限于输入数据的accuracy和当前材质下的model是否适用。
+2. image-based solutions：分为image-based rendering和image-based relighting。
 
 ### methodology
+1. 利用一个手机和一个相机作为acquisition setup，手机的flashlight作为point light。在获得proxy geometry时在natural light下用相机拍摄，然后用COLMAP重建mesh。然后在做relighting时，将手机camera和相机camera register上去，以手机的pose作为point light的位置，以相机拍摄的image来train。
+2. neural textures有30个channel，material basis有5个（一个Lambertian，4个不同的roughness）。首先在某个pose下的view做一个rasterize，然后对每个pixel取texture，获得一张（H*W*30）的内容。（neural textures还过一个net获得mask）
+3. 然后用path tracer，对不同的material和已知的geometry、point light做rendering（当前view）得到5张light map。
+4. neural texture一共30-channel，分为5组，每组6 channels（实际为两张rgb image）。6个channel中每3个channel与light map相乘（element-wise），因此每组channel能获得两张image。将相乘后的一共10张image输入neural renderer获得最终结果。
+5. 解决问题
+   1. 为了解决GPU memory的问题，作者在view sphere上uniformly分布13个point（每个point对应一个net），然后point相连获得triangle。对于落在某个triangle内的view，其内容需经过这个triangle的3个vertices对应的net，得到三个不同的结果，然后将这三个结果以重心方式算weighted sum。
+   2. 作者是用point light做的train，为了generalize to novel lighting，作者将light做了一个augmentation，使model可以用于environment map。  
+6. 作者对拍摄到的用于train的image做了一个gamma correction（2.2）使得pixel value radiometrically linear。（相机在把拍摄到的内容存成image file时就做了一个gamma=1/2.2的correction，使image的成像更接近于人眼，因此做一个gamma=2.2的correction能够变回去）。
+7. 作者对training gt和predicted image首先做了一个log，使它们在log域算loss，这保证training gt的dynamic range也能够被学习到。 
 
 ### limitation
 1. 在设计网络时，没有explicitly考虑view direction。作者认为一个renderer没办法model所有view的结果，因此只是将所有的view分为13个partition，然后对每个partition train一个renderer。（或许是作者试过view direction的model，但是效果不好）。

@@ -207,3 +207,30 @@ cat foo.txt | xargs -I file sh -c 'echo file; mkdir file'
    find /path -type f -print0 | xargs -0 rm
    ```
 6. 
+
+## 搜索进程和杀死进程：pgrep & pkill & kill
+1. ```pgrep [option] pname```
+   1. ``` shell
+      pgrep ssh # 显示以ssh为名称的各个进程的pID
+      pgrep -l ssh # 同时显示以ssh为名称的各个进程的pID和进程名称
+      pgrep -o ssh # 当匹配多个进程时，显示进程号最小的那个进程
+      pgrep -n ssh # 当匹配多个进程时，显示进程好最大的那个进程
+      ```
+2. kill命令（会向指定id的进程发送信号，如终止、杀死等信号）
+   1. ``` shell
+      kill -l # 列出所有可以发送的信号
+      kill -l KILL # 显示KILL信号对应的简化的数值（KILL=9）
+      kill -KILL 12345 = kill -9 12345 # 杀死指定进程
+      ```
+3. pkill命令（可以以进程名称来处理整个进程组）
+   1. ``` shell
+      pkill -o ssh # 杀死以ssh为名称的进程组中进程id最小的进程
+      pkill -n ssh # 杀死以ssh为名称的进程组中进程id最大的进程
+      pkill -9 ssh # 杀死以ssh为名称的整个进程组
+      pkill -u mark # 杀死制定user（mark）的所有进程
+      pkill -u mark，hank # 杀死多个user的所有进程
+      pkill -9 -u mark ssh # 强制杀死user（mark）的以ssh为名称的整个进程组
+      pkill -9 -f "ping 8.8.8.8" # 强制杀死明确带有auguments的进程（shell执行ping 8.8.8.8会产生一个进程去处理，我们要杀死这个进程）
+      ```
+4. 加```-KILL或-9```与不加的区别：不加会正常中断进程，然后一步步将其kill。加了之后直接不讲道理杀死，没有正常中断的过程。一般先用不加```-KILL```，如果无效就使用它，可以理解为不加```-KILL```就是正常关闭软件，加了相当于在任务管理器界面强制终止进程。
+
