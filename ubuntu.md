@@ -220,7 +220,8 @@ cat foo.txt | xargs -I file sh -c 'echo file; mkdir file'
    1. ``` shell
       kill -l # 列出所有可以发送的信号
       kill -l KILL # 显示KILL信号对应的简化的数值（KILL=9）
-      kill -KILL 12345 = kill -9 12345 # 杀死指定进程
+      kill -KILL 12345 = kill -9 12345 # 杀死指定pid的进程
+      kill -9 %n # 杀死当前shell中id为n的进程
       ```
 3. pkill命令（可以以进程名称来处理整个进程组）
    1. ``` shell
@@ -230,7 +231,42 @@ cat foo.txt | xargs -I file sh -c 'echo file; mkdir file'
       pkill -u mark # 杀死制定user（mark）的所有进程
       pkill -u mark，hank # 杀死多个user的所有进程
       pkill -9 -u mark ssh # 强制杀死user（mark）的以ssh为名称的整个进程组
-      pkill -9 -f "ping 8.8.8.8" # 强制杀死明确带有auguments的进程（shell执行ping 8.8.8.8会产生一个进程去处理，我们要杀死这个进程）
+      pkill -9 -f "ping 8.8.8.8" # 强制杀死明确带有auguments的命令产生的进程（shell执行ping 8.8.8.8会产生一个进程去处理，我们要杀死这个进程）
       ```
 4. 加```-KILL或-9```与不加的区别：不加会正常中断进程，然后一步步将其kill（较为安全）。加了之后直接不讲道理杀死，没有正常中断的过程。一般先用不加```-KILL```，如果无效就使用它，可以理解为不加```-KILL```就是正常关闭软件，加了相当于在任务管理器界面强制终止进程。
 
+## 进程的后台运行、suspend、continue等
+1. ```jobs [args]```
+   1. 作用：显示在当前shell下产生的进程（running、suspend or terminating）。
+   2. 直接调用```jobs```只显示进程在当前shell中的序号和进程运行的命令，但是不显示进程的pid。使用```jobs -l```可以显示pid。
+2. ```disown [agrs] [pid | %{当前shell中的进程序号}]``` 
+   1. args中-a代表移除当前shell中的所有作业，-r代表移除运行中的作业。使用-a或者-r后不需要指定后面的pid或者在当前shell中的进程序号**注意：移除只是代表不被当前shell看到，即使用*jobs*命令无法看到移除的进程，但是这些进程还在后台运行。**
+   2. ```shell
+      jobs -l # 查看当前shell中的进程及其id和pid
+      disown %n # 使用通过jobs查看的id移除进程
+      disown pid # 使用通过jobs查看的pid移除进程
+      ```
+3. ```nohup command [&]```：
+   1. 作用：nohup命令用于运行程序或者命令，并忽略所有中断信号SIGHUP。SIGHUP是当前shell关闭时发送到进程的信号。
+   2. ```shell
+      nohup ./clash -d . & # &用于将命令放到后台运行，不在shell显示
+      nohup /root/runoob.sh > runoob.log 2>&1 & # nohup命令执行后shell不会有输出，如果想把输出存下来，可以使用当前命令将所有的输出或者错误都存放到runoob.log（可以自己指定）中
+      ```
+   3. 在2中加&可以把进程放到后台运行，但是由于nohup命令不会在关闭shell后终止进程的运行，因此即使不加&而进程仍在运行时关闭shell，进程仍可以在后台找到。
+   4. 使用nohup后shell的本来的输出会放到当前目录下的*nohup.out*文件中。
+   5. 与disown的关联和区别：在disown中，通过disown移除进程后，进程也会在后台运行，但是无法在当前shell中通过jobs命令查看；而nohup虽然能够保持进程在后台的持续运行，但是仍能够在当前shell中通过jobs命令查看。因此为了保证进程在后台的永久运行，要么直接使用disown，要么使用nohup后使用disown清理在此shell中可查看到的进程，要么使用nohup后直接关闭shell。
+4. 进程的挂起和终止：
+   1. 前台挂起和终止进程：*ctrl+z*是suspend进程，*ctrl+c*是终止进程。进程的挂起只在当前shell有效，只要关闭当前shell，进程就会消失，不存在与后台之中。**前台进程的终止用ctrl+c，后台进程的终止用kill；前台进程的挂起用ctrl+z，后台进程的挂起用kill -stop [pid | %{当前shell进程id}]**
+5. ```fg bg```
+   1. ```shell
+      ./clash -d . # 运行命令然后使用ctrl+z将其suspend
+      jobs -l # 查看当前shell中的进程信息
+      fg %n # 恢复被suspend的进程到前台运行 | 将后台运行的某个进程换到前台运行。若想将前台运行的进程换到后台运行，则先用ctrl+z将其suspend，然后使用bg将其放在后台运行。
+      bg %n # 恢复被suspend的进程到后台运行
+      ```
+   2. 注意：没有disown和nohup命令，这些进程都只在当前shell中运行，关闭当前shell后，shell会向进程发送Sighup信号，kill这些进程。也即，bg和fg只能操纵当前shell中的进程而不能操纵后台进程。
+6. ```&```：将&加到command的最后可以使command在后台运行，若有些command搭配&运行后仍占用前台，即使用ctrl+c终止进程，仍可以在jobs或者后台看到这个进程。
+```shell
+./clash -d . &
+ctrl + c # 执行完ctrl+c后仍可以看到进程在运行
+```
