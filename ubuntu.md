@@ -270,3 +270,19 @@ cat foo.txt | xargs -I file sh -c 'echo file; mkdir file'
 ./clash -d . &
 ctrl + c # 执行完ctrl+c后仍可以看到进程在运行
 ```
+
+## 复制文本中的内容到clipboard（用于复制记录的git token或者公钥）
+1. mac
+```shell
+pbcopy < ~/.ssh/id_rsa.pub
+```
+2. windows
+```shell
+clip < ~/.ssh/id_rsa.pub
+```
+3. linux
+```shell
+sudo apt-get install xclip
+xclip -sel clip < ~/.ssh/id_rsa.pub
+# Copies the contents of the id_rsa.pub file to your clipboard
+```
