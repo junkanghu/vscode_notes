@@ -215,6 +215,7 @@ cat foo.txt | xargs -I file sh -c 'echo file; mkdir file'
       pgrep -l ssh # 同时显示以ssh为名称的各个进程的pID和进程名称
       pgrep -o ssh # 当匹配多个进程时，显示进程号最小的那个进程
       pgrep -n ssh # 当匹配多个进程时，显示进程好最大的那个进程
+      pgrep -f "python main.py" # 找到正在执行某一命令的进程的pid
       ```
 2. kill命令（会向指定id的进程发送信号，如终止、杀死等信号）
    1. ``` shell
@@ -271,10 +272,11 @@ cat foo.txt | xargs -I file sh -c 'echo file; mkdir file'
 ctrl + c # 执行完ctrl+c后仍可以看到进程在运行
 ```
 
-## 复制文本中的内容到clipboard（用于复制记录的git token或者公钥）
+## 复制、粘贴文本中的内容到clipboard（用于复制记录的git token或者公钥）
 1. mac
 ```shell
 pbcopy < ~/.ssh/id_rsa.pub
+echo `pbpaste` # 若要在shell中打印内容，可以用pbpaste
 ```
 2. windows
 ```shell
@@ -285,4 +287,17 @@ clip < ~/.ssh/id_rsa.pub
 sudo apt-get install xclip
 xclip -sel clip < ~/.ssh/id_rsa.pub
 # Copies the contents of the id_rsa.pub file to your clipboard
+```
+4. 将linux中的xclip命令换为pbcopy
+在~/.zshrc中加入以下内容：
+```shell
+alias pbcopy='xclip -selection clipboard'
+alias pbpaste='xclip -selection clipboard -o'
+```
+5. 解决pbcopy命令会在paste时多出一个换行符的几种方法
+``` shell
+printf $(pwd) | pbcopy # 1
+echo -n $(pwd) | pbcopy # 2
+echo -n "$(pwd)" | pbcopy # 3（如果目录名称中包含空格字符用3，否则用2）
+echo "abcd\c" | pbcopy # 如果直接在shell中手动输入要copy的内容，可以在内容后面加上\c
 ```
