@@ -119,11 +119,25 @@ ls | wc -l
 i=100000001; for f in *.JPG; do mv "$f" ${i#1}.jpg; ((i++)); done
 ```
 
-## 建立软链接
+## 建立硬、软链接
+1. 概念
+   1. 软链接，以路径的形式存在，类似于Windows操作系统中的快捷方式。硬链接以文件副本的形式存在，但不占用实际空间。
+   2. 软链接可以跨文件系统 ，硬链接不可以。
+   3. 软链接可以对一个不存在的文件名进行链接。
+   4. 软链接可以对目录进行链接，硬链接不行。
+2. 软链接
 ``` shell
 ln -s source target
+ln -s log2013.log link2013
 ```
 例如source为/dellnas/dataset/static_recon/Relight/junkangs/head_1118/（这个“/”不能缺，代表将整个head_1118文件夹转移到某个路径下）, target为/dellnas/home/hujunkang/data/（data这个文件夹必须存在，head_1118文件夹将会软链接到data文件夹下，名称为head_1118）。
+3. 硬链接
+``` shell
+ln log2013.log ln2013
+```
+
+![soft](./images/soft.png)
+![hard](./images/hard.png)
 
 ## 改变权限命令chmod
 ![rwx](./images/rwx.jpg)
@@ -300,4 +314,47 @@ printf $(pwd) | pbcopy # 1
 echo -n $(pwd) | pbcopy # 2
 echo -n "$(pwd)" | pbcopy # 3（如果目录名称中包含空格字符用3，否则用2）
 echo "abcd\c" | pbcopy # 如果直接在shell中手动输入要copy的内容，可以在内容后面加上\c
+```
+
+## 输入输出重定向
+一、基础概念：
+1. stdin、stdout、stderr是三个文件，分别代表标准输入、标准输出、标准错误输出，它们的文件描述符分别为0、1、2。
+2. unix程序默认从stdin读取数据，默认从stdout输出数据，默认从stderr写入错误信息。
+
+二、用法
+1. 输出重定向（>、>>）：
+``` shell
+command > file # 泛化用法，代表把command的标准输出重定向到file中
+command >> file # 泛化用法。>会把file中原有的内容全部清除之后再写入，但是>>会在原来的文件内容末尾继续写下去
+command 2>file # 将stderr重定向到file
+command 2>>file # 追加输入
+who > list.txt
+who >> list.txt
+```
+2. 输入重定向
+``` shell
+command < file # 泛化用法，command获取file中的内容作为其输入
+wc -l < list.txt
+```
+3. 特殊例子
+``` shell
+command > file 2>&1 # >后面默认跟file，但是这里跟的是文件描述符1，因此要用&1，代表重定向到标准输出中，如果不加&代表重定向到当前路径下文件名为1的file中；这个命令要从左到右理解，代表输出先重定向到file中，此时在这条命令中已经默认file为stdout而不是/dev/stdout，因此标准输出会写入file，而后面的2>&1，代表将标准错误输出重定向到stdout中，因为此时stdout已经为file，因此错误信息也会被写入file。
+command >> file 2>&1 # 追加输入
+command > file 2>&1  =  command &> file  =  command >& file # 在csh中无法使用上面的命令，只能使用这里的简化方式
+command > /dev/null # /dev/null是一个特殊的文件，写入其中的内容都会被丢弃，读取其内容也不会有结果。这条命令可以起到禁止输出的作用。
+command < file1 > file2 # 先将stdin重定向到file1，然后将stdout重定向到file2。代表将file1的内容输入命令，然后将命令的输出写入到file2。
+```
+
+## ssh使用
+1. 如何配置ssh：ssh的配置文件在*/etc/ssh/sshd_config*中，其中可以看到端口号、空闲超时时间等配置项。
+2. 构建本地ssh密钥
+``` shell
+ssh-keygen -t rsa
+```
+3. 将本地公钥放到远程服务器以免去输入密码
+``` shell
+ssh-keygen -t rsa # 如果已经生成过密钥就不需要再次生成
+export USER_AT_HOST="your-user-name-on-host@hostname"
+export PUBKEYPATH="$HOME/.ssh/id_ed25519.pub"
+ssh-copy-id -i "$PUBKEYPATH" "$USER_AT_HOST"
 ```
