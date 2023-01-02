@@ -358,3 +358,30 @@ export USER_AT_HOST="your-user-name-on-host@hostname"
 export PUBKEYPATH="$HOME/.ssh/id_ed25519.pub"
 ssh-copy-id -i "$PUBKEYPATH" "$USER_AT_HOST"
 ```
+
+## 改变文件所属者（user、group）
+查看文件所属者和所属组可用```ll(ls -l)```
+1. chown
+   1. 作用：主要用来改变文件的拥有者，root权限才能改。
+   2. ``` shell
+      chown root /home/hujunkang/a.log # 改变文件的所有者为root
+      chown root:group file.txt # 改变文件的所有者为root，改变其所属组为group
+      chown -R root:group * # 改变当前目录下所有文件的所有者为root，所属组为group
+      ```
+2. chgrp
+   1. 作用：用于非root用户改变文件所属组（要求用户为组内成员）
+   2. ``` shell
+      chgrp -v bin log2012.log # 将文件的所属组改为bin。-v代表显示指令执行过程
+      chgrp -R -v bin * = chgrp -Rv bin * # 将当前目录下所有文件的所属组改为bin
+      chgrp --reference=log2012.log log2013.log # 将log2013.log的所属组改为跟log2012.log一样
+      ```
+
+## 显示目录或文件的大小：du
+1. -s代表显示总计大小
+2. -h代表以KB、MB等为单位，不加-h时默认以Byte为单位
+``` shell
+du -s # 显示当前目录的总大小
+du -s * # 显示当前目录下每个目录或文件的总大小
+du -sh # 显示当前目录总大小（以KB、MB等为单位）
+du -sh file.txt # 显示file.txt文件的大小
+```
