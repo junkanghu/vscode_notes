@@ -150,7 +150,7 @@ chmod [-x] 权限命令 filename(dir name)
    1. 用数字指定：一共三位数字，每位数字分别代表user、group、others的权限。可以根据二进制得出数字，如777代表对user、group、others都服务rwx权限。
    ![rwx_n](./images/rwx_n.jpg)
    2. 用字母指定:
-      1. u,g,o,a：分别代表user、group、others、all
+      1. u,g,o,a：分别代表user、roup、others、all
       2. +-=：分别代表增加某个权限，减去某个权限，设置权限为
       3. 结合起来就是如：ug+r, a+r, ugo-r等
 4. example：
@@ -188,8 +188,23 @@ chmod ug=rwx,o=x file # 设置ug权限为rwx，o权限为x
 2. example
 ![RE](./images/RE.png)
 
-二、grep语法
-1. asdf 
+二、grep
+用于查找指定文件中含有的指定字符串
+1. ```grep [option] 文件中要查找的字符串 文件名```
+2. -i用于忽略大小写；-v用于显示不包含指定字符串的行；-E同egrep；-n代表显示行号
+3. example
+``` shell
+grep test *file # 查找后缀有file字符串的文件中，包含test字符串的行，并打印该行
+grep test file* # 查找前缀有file字符串的文件中，包含test字符串的行，并打印
+grep -r update /etc/acpi # 递归查找指定目录下所有文件中包含update字符串的行，并打印所有文件名和行
+grep -v test *test* # 查找文件名中包含test字符串，但是文件内容中不含test字符串的行，并打印
+grep test file.txt # 查找file.txt中是否含有test字符串，若有则打印
+ls | grep txt # 显示当前目录下文件名中含有txt字符串的文件名字并打印
+echo "hujunkang" | grep hu # 查看字符串“hujunkang”中是否含有字符串“hu”
+```
+\*file代表以file字符串作为后缀、file\*代表以file字符串作为后缀、\*file\*代表含有file字符串。若文件名中不含*，即直接```grep test file```，则file必须是一个完整的文件名，其代表在file中查找是否有test字符串，否则会报错。
+
+**Note：上面的ls、echo配合|的使用可以这样理解。grep命令在搜索某个文件中是否含有某个字符串时，首先将那个文件的内容打印到stdout中，然后在stdout中去搜索，在使用ls或者echo时，内容也被打印到stdout中，因此也相当于在stdout中搜索字符串，因此可以搜索文件名含有指定字符串的文件**
 
 
 ## 命令传参xargs
@@ -402,3 +417,4 @@ dig 命令默认的输出信息比较丰富，大概可以分为 5 个部分。
 ``` shell
 traceroute www.google.com # 查询本机到google经过的路由
 ```
+
