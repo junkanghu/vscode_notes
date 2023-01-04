@@ -385,3 +385,20 @@ du -s * # 显示当前目录下每个目录或文件的总大小
 du -sh # 显示当前目录总大小（以KB、MB等为单位）
 du -sh file.txt # 显示file.txt文件的大小
 ```
+
+## 用域名查询ip地址：dig
+``` shell
+dig www.baidu.com # 查询百度的ip地址
+```
+![dig](./images/dig.png)
+dig 命令默认的输出信息比较丰富，大概可以分为 5 个部分。
+第一部分显示 dig 命令的版本和输入的参数。
+第二部分显示服务返回的一些技术详情，比较重要的是 status。如果 status 的值为 NOERROR 则说明本次查询成功结束。
+第三部分中的 "QUESTION SECTION" 显示我们要查询的域名。
+第四部分的 "ANSWER SECTION" 是查询到的结果。
+第五部分则是本次查询的一些统计信息，比如用了多长时间，查询了哪个 DNS 服务器，在什么时间进行的查询等等。
+
+## 查询包到达某个目的地经过的路由：traceroute
+``` shell
+traceroute www.google.com # 查询本机到google经过的路由
+```

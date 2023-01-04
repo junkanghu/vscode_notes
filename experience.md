@@ -92,6 +92,7 @@ export no_proxy=http://gitlab.idr.ai
 ```
 
 ## ubuntu下载google driver上的public文件
+一、利用wget（可能会下不了）
 1. 右键点击想要下载的文件，点击*获取链接*，然后点击*复制链接*。
 2. 链接的格式一般如```https://drive.google.com/file/d/10clmresw01amm1PaYeGjA8zsEBew-eX3/view?usp=share_link```，我们需要的是fileid=```10clmresw01amm1PaYeGjA8zsEBew-eX3```。
 3. 然后在terminal运行：
@@ -100,3 +101,22 @@ wget --no-check-certificate 'https://docs.google.com/uc?export=download&id=FILEI
 wget --load-cookies /tmp/cookies.txt "https://docs.google.com/uc?export=download&confirm=$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://docs.google.com/uc?export=download&id=FILEID' -O- | sed -rn 's/.*confirm=([0-9A-Za-z_]+).*/\1\n/p')&id=FILEID" -O FILENAME && rm -rf /tmp/cookies.txt
 ```
 4. 上面的命令一般用于下载小文件，下面的命令一般用于下载大文件（数据集之类的）。注意，两个命令中都存在FILEID（第一个命令有一处，第二个命令有两处）和FILENAME（两个命令分别各有一处），FILEID就是2中指的内容，FILENAME就是本地想要存取的路径和文件名（后缀一定要与源文件一样，名字可以改）。
+
+二、利用curl
+1. 打开google api[link](https://developers.google.com/oauthplayground/)。
+2. 找到Drive API v3，点击https://...，然后点击Authorize APIs。
+![api1](./images/api1.jpg)
+3. 出现这个页面后，点击*Exchange authorization code for tokens*
+![api2](./images/api2.jpg)
+4. 点击后会出现access_token，这个就是我们需要使用的东西
+![api3](./images/api3.jpg)
+5. 在shell输入以下命令
+``` shell
+curl -H "Authorization: Bearer YYYYY" https://www.googleapis.com/drive/v3/files/XXXXX?alt=media -o ZZZZZ 
+```
+将YYYYY替换为上面的access_token（引号里面的内容）；将XXXXX替换为google drive的文件ID；将ZZZZZ替换为想要保存的文件名。
+
+例如
+``` shell
+ curl -C - -H "Authorization: Bearer ya29.a0AX9GBdWFPjrWOcfNgEKaho4azox3ifXBfTSaOeO8LxMXJx_AgwumRCLTDIwL0xFBIQx4D3LdqkDRMrSW2qgeq9NyJTEhTA5nzU07REjPkrpo5J3_r1G7NddxQ37mbWfOC66Mq-Gi5eoGjBwqaDvIxbbM0VYVaCgYKAdYSARISFQHUCsbCkw2SFqJf7z2hbq5-wzVuEQ0163" https://www.googleapis.com/drive/v3/files/1aVhXp2TPBNCPCEoIdPxvbxc841NEzxdG?alt=media -o   hro.zip
+```

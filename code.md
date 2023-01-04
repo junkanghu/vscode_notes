@@ -101,3 +101,12 @@ def gen_light_xyz(envmap_h, envmap_w, envmap_radius=1e2):
  ```
  公式推导:
  ![derivation](./images/env_map_derivation.JPG)
+
+ 2. 用cv2 show image
+``` python
+import cv2
+img = cv2.imread('img.png', 0)
+cv2.imshow('1', img) # 1表示window name
+cv2.waitKey(0)
+```
+ 3. 
