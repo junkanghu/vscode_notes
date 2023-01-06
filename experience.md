@@ -110,7 +110,7 @@ wget --load-cookies /tmp/cookies.txt "https://docs.google.com/uc?export=download
 ![api2](./images/api2.jpg)
 4. 点击后会出现access_token，这个就是我们需要使用的东西
 ![api3](./images/api3.jpg)
-5. 在shell输入以下命令
+5. 在shell输以下命令
 ``` shell
 curl -H "Authorization: Bearer YYYYY" https://www.googleapis.com/drive/v3/files/XXXXX?alt=media -o ZZZZZ 
 ```
@@ -120,3 +120,62 @@ curl -H "Authorization: Bearer YYYYY" https://www.googleapis.com/drive/v3/files/
 ``` shell
  curl -C - -H "Authorization: Bearer ya29.a0AX9GBdWFPjrWOcfNgEKaho4azox3ifXBfTSaOeO8LxMXJx_AgwumRCLTDIwL0xFBIQx4D3LdqkDRMrSW2qgeq9NyJTEhTA5nzU07REjPkrpo5J3_r1G7NddxQ37mbWfOC66Mq-Gi5eoGjBwqaDvIxbbM0VYVaCgYKAdYSARISFQHUCsbCkw2SFqJf7z2hbq5-wzVuEQ0163" https://www.googleapis.com/drive/v3/files/1aVhXp2TPBNCPCEoIdPxvbxc841NEzxdG?alt=media -o   hro.zip
 ```
+
+## envmap相关内容
+一、spherical envmap
+1. 两种不同的$\theta$、$\phi$坐标表示方式
+   1. $\theta$、$\phi$方式：同高数学立体几何时的表示方式相同，$\theta$从+z轴向-z轴移动时，从0变到$\pi$，即+z轴代表$theta=0$，-z轴代表$\theta=\pi$，xy平面代表$\theta=\frac{\pi}{2}$
+   2. latitude-longitude（lat-lng方式）方式：$\theta$从+z轴向-z轴移动时，从$\frac{\pi}{2}$变到$-\frac{pi}{2}$，即+z轴代表$theta=\frac{\pi}{2}$，-z轴代表$\theta=-\frac{pi}{2}$，xy平面代表$\theta=0$
+
+``` python
+                lat-lng
+                                            ^ z (lat = 90)
+                                            |
+                                            |
+                       (lng = -90) ---------+---------> y (lng = 90)
+                                          ,'|
+                                        ,'  |
+                   (lat = 0, lng = 0) x     | (lat = -90)
+
+
+                theta-phi
+                                            ^ z (theta = 0)
+                                            |
+                                            |
+                       (phi = 270) ---------+---------> y (phi = 90)
+                                          ,'|
+                                        ,'  |
+                (theta = 90, phi = 0) x     | (theta = 180)
+```
+
+2. 球体单位面积元和单元立体角元的推导
+![sphere](./images/sphere.jpg)
+单位面积元视为一个矩阵，要求其面积就要求其边长，因为两条边长都是弧，因此其长度需要通过$\alpha = \frac{l}{r}$来求。
+$$
+BD=r*sin\theta \\
+AB=\alpha * r_{\overbrace{ABD}}=d\phi*BD=rsin\theta d\phi （在弧BCO里面OB为圆半径）\\
+BC=d\theta * r=rd\theta （在弧ABD里面BD为圆半径）\\
+dA=AB*BC=r^2sin\theta d\theta d\phi \\
+d\Omega=\frac{dA}{r^2}=sin\theta d\theta d\phi
+$$
+**注意：在这里推导的时候$\theta$是采取$\theta$$\phi$方式，因此要注意$\theta$与lat-lng方式不同（加起来是90度）**
+
+3. 从PBR到envmap推导
+$$
+\because \int f(x)g(x){\rm d}x \approx \frac{\int f(x)}{\int {\rm d}x} * \int g(x){\rm d}x \\
+L_o(\omega_o)=\int_{\Omega^+}L_i(\omega_i)f(\omega_o, \omega_i)cos\theta {\rm d}\omega_i \\
+\begin{aligned}
+\therefore L_o(\omega_o)&=\int_{\Omega^+}L_i(\omega_i)f(\omega_o, \omega_i)cos\theta {\rm d}\omega_i \\
+&= \frac{\int_{\Omega^+} L_i(\omega_i){\rm d}\omega_i}{\int_{\Omega^+} {\rm d}\omega_i} * \int f(\omega_o, \omega_i)cos\theta{\rm d}\omega_i
+\end{aligned} \\
+\therefore L=\frac{\int_{\Omega^+} L_i(\omega_i){\rm d}\omega_i}{\int_{\Omega^+} {\rm d}\omega_i} \\
+{\rm discretizing:} \\
+\because Monte Carlo:\int_0^{\pi}f(x){\rm d}x \approx \frac{\pi}{N}\sum_{i=1}^{N}f(x_i)（均匀采样）\\
+\begin{aligned}
+\therefore L&=\frac{\int_{\Omega^+} L_i(\omega_i){\rm d}\omega_i}{\int_{\Omega^+} {\rm d}\omega_i} \\
+&= \frac{\frac{2\pi}{N_1} \frac{\pi}{2N_2}\sum_{i=1}^{N_1}\sum_{j=1}^{N_2}L_{ij}sin\theta}{\frac{2\pi}{N_1} \frac{\pi}{2N_2}\sum_{i=1}^{N_1}\sum_{j=1}^{N_2}sin\theta} \\
+&= \frac{\sum_{i=1}^{N_1}\sum_{j=1}^{N_2}L_{ij}sin\theta}{\sum_{i=1}^{N_1}\sum_{j=1}^{N_2}sin\theta}
+\end{aligned}
+$$
+
+4. 

@@ -418,3 +418,29 @@ dig 命令默认的输出信息比较丰富，大概可以分为 5 个部分。
 traceroute www.google.com # 查询本机到google经过的路由
 ```
 
+## 从网上下载的software是.deb文件，如何安装软件
+``` shell
+sudo apt-get -f -y ./xxx.deb
+```
+
+## 查看系统文件：lsof
+1. 文件类型：普通文件、目录、网络文件系统的文件、字符或设备文件、共享库、管道、符号链接、网络文件（socket等）等。
+2. args
+   1. -a：不同选项的结果相与（默认不同选项的结果相或，即都显示出来）
+   2. -c<进程名>：列出指定进程所打开的文件
+   3. -t：只返回进程id
+   4. -p：查看指定pid打开的内容
+3. example
+``` shell
+lsof -u hujunkang # 列出指定用户打开了哪些文件
+lsof -u ^hujunkang # 列出除了指定用户外所有其他用户所做的事情
+lsof -t -u hujunkang # 只列出指定用户所有进程的进程id
+kill -9 `lsof -t -u hujunkang` # 杀死指定用户所有的进程
+lsof -p pid # 显示指定进程已打开的内容
+```
+
+## 查看系统上各个用户运行了多长时间
+``` shell
+uptime # 显示系统运行了多长时间，有几个用户
+w # 显示每个用户登入系统多长时间
+```
