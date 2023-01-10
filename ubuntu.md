@@ -444,3 +444,60 @@ lsof -p pid # 显示指定进程已打开的内容
 uptime # 显示系统运行了多长时间，有几个用户
 w # 显示每个用户登入系统多长时间
 ```
+
+## brace expansion: {}
+轮流使用{}中的每个element
+1. 常用方式
+``` shell
+echo {one,two,three,four} # one two three four
+echo {1,2,3,4} # 1 2 3 4
+echo {1..10} # 1 2 ... 10
+echo {10..1} # 10 9 8 ... 1
+echo {4..-3} # 4 3 ... -2 -3
+echo {d..h} # d e f g h
+```
+2. 用其写loops
+``` shell
+for i in {3..7}
+do
+   echo $i
+done
+
+for i in {a..d}; do echo $i; done
+```
+3. 不同{}的element的排列组合
+注意不同brace expansion之间有逗号和没逗号（line1和3）区别
+``` shell
+echo {a..c}{1..3} # a1 a2 a3 b1 b2 b3 c1 c2 c3
+echo {p1,p2{a..b},p3} # p1 p2a p2b p3
+echo {{1..3},{5..3}} # 1 2 3 5 4 3
+```
+4. {}与字符串组合
+``` shell
+echo c{1..3} # c1 c2 c3
+echo {1..3}.md # 1.md 2.md 3.md
+echo c{1..3}.md # c1.md c2.md c3.md
+```
+5. 特殊用法
+``` shell
+echo hu{,.txt} # hu hu.txt
+```
+6. 与文件操作相关
+``` shell
+touch file-{1..4}.txt # 创建了file1.txt file2.txt file3.txt file4.txt
+cp ./hu{,.txt} # equals cp ./hu ./hu.txt
+diff ./hu/{new,old}/a.txt # 查看./hu/new/a.txt和./hu/old/a.txt的差异
+mkdir -p {a,b,c,d{/g,/h,/j}} # 嵌套建立文件夹
+```
+
+## mkdir的一些选项
+``` shell
+mkdir -p {a,b,c,d{/g,/h,/j}} # -p用于递归创建多级目录；若不加-p，只能创建当前目录下的a、b、c、d，不能创建d/g、d/h，d/j。
+mkdir -m 777 hu # 创建文件时就设定权限
+mkdir -v # 每次创建，目录时都显示信息("已创建目录xxx")
+```
+## 查看当前目录结构: tree命令（可能要下载）
+``` shell
+tree
+```
+![tree](./images/tree.png)
