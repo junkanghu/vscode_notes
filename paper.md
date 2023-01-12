@@ -328,6 +328,14 @@ In this figure, under the single viewpoint condition, algorithms without computi
    2. coarse部分只采用appearance code（static和transient都有），没采用uncertainty。
    3. fine部分的loss中，第一项代表着variance$\beta$越大，这个pixel越不可靠，因此其权重应该越小，对loss的影响越小；第二项是对第一项的惩罚loss，用于减小$\beta$值，防止所有pixel的$\beta$值都很大，使网络认为所有pixel都不可靠而学不到东西。第三项是对transient density的惩罚，防止transient density过大，抹杀了static density的作用（算法本身想获得static scene）。
 
+### thinking
+1. 为什么算transmittance时static和transient的density可以相加？
+如果只有static，那么空间中的object的位置是固定的，每个location的density也是固定的。而有了transient后，其在原来的static基础上相当于在scene中的某个location放了新的object，因此除了新object所在的位置，其他的density保持与static时一样，而新object位置的density由于object的存在而变大了。因此在算transmittance时，要把static和transient各自的density相加，理想的情况是static density就是代表没有transient object时的density，而transient density除了有新object的地方，其他地方的density几乎为0（没有在这些地方加入新的particle），而有新object地方的density在static density中几乎为0，加上了transient density后总量变大了。这就造成scene中，如果有transient遮挡了static部分，由于新obejct处的density很大，计算transmittance时，新object后面的sample point的transmittance会非常小，即只有transient处的sample point对ray rgb有贡献，而后面的static object没有贡献，这就可以解释新object遮挡了static scene中的内容。
+2. 为什么uncertainty能够work？
+文中说uncertainty的作用是减少含有transient的pixel对于loss的贡献值，以使其梯度减小，这使得不含有transient的表示static scene的pixel的贡献较大。首先因为transient是image-dependent的，即每张image张除了static scene的内容是不变的（只是改变了view point），transient的量有可能在每张image中都不相同，因此为了model这种diversity，给每张image一个transient code（在static part中也有一个code，其是appearance code）以model当前image中的transient。这个transient code使得transient Nerf能够随着其变化（对于当前image，相当于对当前image中的transient object建了一个Nerf；对另一张image，对其transient object建了另一个Nerf。这两个Nerf并不是通过建立两组MLPs来实现，而是通过1组MLP配合不同的code实现，输入不同的code代表不同组MLP之间的切换）。
+
+---
+
 ## HDR-Plenoxels: Self-Calibrating High Dynamic Range Radiance Fields
 
 ### innovation
@@ -784,7 +792,7 @@ Due to the high cost of previous hardware, PolFace proposes to capture face data
 
 ### methodology
 1. 利用一个手机和一个相机作为acquisition setup，手机的flashlight作为point light。在获得proxy geometry时在natural light下用相机拍摄，然后用COLMAP重建mesh。然后在做relighting时，将手机camera和相机camera register上去，以手机的pose作为point light的位置，以相机拍摄的image来train。
-2. neural textures有30个channel，material basis有5个（一个Lambertian，4个不同的roughness）。首先在某个pose下的view做一个rasterize，然后对每个pixel取texture，获得一张（H*W*30）的内容。（neural textures还过一个net获得mask）
+2. neural textures有30个channel，material basis有5个（一个Lambertian，4个不同的roughness）。首先在某个pose下的view做一个rasterize，然后对每个pixel取texture，获得一张（H\*W\*30）的内容。（neural textures还过一个net获得mask）
 3. 然后用path tracer，对不同的material和已知的geometry、point light做rendering（当前view）得到5张light map。
 4. neural texture一共30-channel，分为5组，每组6 channels（实际为两张rgb image）。6个channel中每3个channel与light map相乘（element-wise），因此每组channel能获得两张image。将相乘后的一共10张image输入neural renderer获得最终结果。
 5. 解决问题
@@ -795,3 +803,16 @@ Due to the high cost of previous hardware, PolFace proposes to capture face data
 
 ### limitation
 1. 在设计网络时，没有explicitly考虑view direction。作者认为一个renderer没办法model所有view的结果，因此只是将所有的view分为13个partition，然后对每个partition train一个renderer。（或许是作者试过view direction的model，但是效果不好）。
+
+## Rapid Acquisition of Specular and Diffuse Normal Maps from Polarized Spherical Gradient Illumination
+
+
+### normal derivation
+1. 对于位于light stage中心的human or object来说，从light stage各个方向射向其时，若某个方向为$\omega=(\omega_{x}), \omega_{y}, \omega_{z}$，那么从这个方向射出的光的intensity调整为$\omega_x$或$\omega_y$或$\omega_z$，至于调整为哪个，视其为4个pattern中的哪一个，若为$P_x$则调整为$\omega_x$，依次类推。
+2. 整个light stage所有光源的最大亮度若为c，则pattern=c时代表将所有light的强度调整为c；若pattern=X，代表将每个光源的强度调整为$c\omega_x$（其中$\omega=(\omega_{x}, \omega_{y}, \omega_{z}) \& ||\omega||_2=1$）;pattern=Y或Z时类似。
+3. diffuse normal推导
+![diffuse](./images/diffuse_normal.png.JPG)
+
+由于在公式推导时入射光强度$P_i(\omega)$定义在[-1, 1]上，即入射的light intensity定义在[-1, 1]，因此获得的reflectance（$L_x(\vec{v})$、$L_y(\vec{v})$、$L_z(\vec{v})$）也分布在[-1, 1]，这才能使得上述推导获得的normal取值在[-1, 1]之间，代表真正的坐标。由于我们实际的光照intensity位于[0, 1]之间，无法满足公式推导时的[-1, 1]要求，因此我们需要将得到的$L_i$映射回[-1, 1]。我们实际光照的intensity$P_i'$满足$$P_i' =\frac{1}{2}(P_i+P_c), P_c=1$，那么用这个实际的$P_i'$作为intensity得到的reflectance为$L_i'$，用推导时位于[-1, 1]之间的$P_i$得到的reflectance为$L_i$，用实际的满光照$L_c$得到的reflectance为$L_c$，则根据线性相加原则，$L_i'=\frac{1}{2}(L_i+L_c)$，为了将[0, 1]之间的$L_i'$映射回[-1, 1]，因此做反变换得到$L_i=2L_i'-L_c$。即我们要将在gradient illumination下得到的image $L_i'$的pixel value先乘上2，然后再减去在full illumination下得到的image $L_c$，即可得到位于[-1, 1]之间的$L_i$。根据上面的推导，将得到的$(L_x, L_y, L_z)$做normalization即可得到normal坐标，其位于[-1, 1]。为了做visualization，可以将其归一化到[0, 1]。文中的Figure 2就做了这个过程。
+
+4. specular normal推导

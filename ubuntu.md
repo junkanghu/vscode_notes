@@ -501,3 +501,58 @@ mkdir -v # 每次创建，目录时都显示信息("已创建目录xxx")
 tree
 ```
 ![tree](./images/tree.png)
+
+## 输出序列：seq
+``` seq [option] ... start step end```
+
+-s：指定分隔符，默认为\n
+-w：在数字前增加0，使得输出对其
+-f：以printf的格式标准输出（"%3g"代表三位用空格补齐；"%03g"代表三位用0补齐）
+
+``` shell
+seq 10 # 1-10(\n分隔)
+seq 2 10 # 2-10（\n分隔）
+seq 1 3 10 # 1 4 7 10（\n分隔）
+seq -s "r" 1 3 # 1r2r3
+seq -w 7 11 # 07 08 09 10 11
+seq -f "%.2f" 2 3 # 2.00 3.00
+```
+
+``` shell
+[deng@localhost ~]$ seq -f "%03g" 9 11
+009
+010
+011
+[deng@localhost ~]$ seq -s " " -f "str%03g" 9 11
+str009 str010 str011
+```
+
+## linux shell中的expansion优先级
+{} > ~ > parameter/variable > {+-*/} > command substitution(存储命令执行结果的符号，可能是``，也可能是$()，不同的shell环境不一样) > word splitting > file expansion(\*、?、[])
+
+因此：
+1. ```{$a..$b}```无法执行，因为brace expansion先于\$执行。可以用```seq $a $b```。
+
+## 把command的输出作为文件使用
+命令的输出可以用```<```将其视作文件处理
+``` shell
+diff /etc/hosts <(ssh 10.0.1.6 cat /etc/hosts)
+```
+
+## 优化ssh config
+某些情况下能够避免断开；在低带宽时能够减少数据流量。
+``` shell
+TCPKeepAlive=yes
+ServerAliveInterval=15
+ServerAliveCountMax=6
+Compression=yes
+ControlMaster auto
+ControlPath /tmp/%r@%h:%p
+ControlPersist yes
+```
+
+## 使用ll查看权限无法显示八进制数字权限模式，可用以下
+``` shell
+stat -c '%A %a %n' a.txt # 查看a.txt数字权限 775
+stat -c '%A %a %n' * # 查看当前目录下所有文件数字权限
+```
