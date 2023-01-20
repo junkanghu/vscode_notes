@@ -816,3 +816,4 @@ Due to the high cost of previous hardware, PolFace proposes to capture face data
 由于在公式推导时入射光强度$P_i(\omega)$定义在[-1, 1]上，即入射的light intensity定义在[-1, 1]，因此获得的reflectance（$L_x(\vec{v})$、$L_y(\vec{v})$、$L_z(\vec{v})$）也分布在[-1, 1]，这才能使得上述推导获得的normal取值在[-1, 1]之间，代表真正的坐标。由于我们实际的光照intensity位于[0, 1]之间，无法满足公式推导时的[-1, 1]要求，因此我们需要将得到的$L_i$映射回[-1, 1]。我们实际光照的intensity$P_i'$满足$$P_i' =\frac{1}{2}(P_i+P_c), P_c=1$，那么用这个实际的$P_i'$作为intensity得到的reflectance为$L_i'$，用推导时位于[-1, 1]之间的$P_i$得到的reflectance为$L_i$，用实际的满光照$L_c$得到的reflectance为$L_c$，则根据线性相加原则，$L_i'=\frac{1}{2}(L_i+L_c)$，为了将[0, 1]之间的$L_i'$映射回[-1, 1]，因此做反变换得到$L_i=2L_i'-L_c$。即我们要将在gradient illumination下得到的image $L_i'$的pixel value先乘上2，然后再减去在full illumination下得到的image $L_c$，即可得到位于[-1, 1]之间的$L_i$。根据上面的推导，将得到的$(L_x, L_y, L_z)$做normalization即可得到normal坐标，其位于[-1, 1]。为了做visualization，可以将其归一化到[0, 1]。文中的Figure 2就做了这个过程。
 
 4. specular normal推导
+![]

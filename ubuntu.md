@@ -420,7 +420,8 @@ traceroute www.google.com # 查询本机到google经过的路由
 
 ## 从网上下载的software是.deb文件，如何安装软件
 ``` shell
-sudo apt-get -f -y ./xxx.deb
+sudo apt-get install gdebi
+sudo gdebi ./xxx.deb
 ```
 
 ## 查看系统文件：lsof
