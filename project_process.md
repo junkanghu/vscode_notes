@@ -40,8 +40,39 @@
    ![multiple](./images/multiple_importance.jpg)
    5. 以PBR为例，简要阐述其与importance sampling和期望的联系：
    ![expectation](./images/expectation.jpg)
-   6. GGX importance sampling推导（通常用N作为pdf）：
-   
+   6. GGX importance sampling推导（通常用D作为pdf）：
+
+   D的表达式为：
+
+   $$
+   D(h)=\frac{\alpha^2}{\pi\left(\left(\alpha^2-1\right) \cos ^2 \theta+1\right)^2}
+   $$
+
+   由于D不是完全的pdf，需要乘上$cos\theta$（详细见下面的microfacet剖析），因此pdf为：
+
+   $$
+   p_h(\omega)=\frac{\alpha^2 \cos \theta}{\pi\left(\left(\alpha^2-1\right) \cos ^2 \theta+1\right)^2}
+   $$
+
+   然后再根据$p(\omega)$和$\theta$ $\phi$的推导方式即可得到：
+
+   $$
+   \begin{aligned}
+   P_h(\theta) & =\int_0^\theta \frac{2 \alpha^2 \cos (t) \sin (t)}{\left(\cos ^2 t\left(\alpha^2-1\right)+1\right)^2} d t \\
+   & =\int_\theta^0 \frac{\alpha^2}{\left(\cos ^2 t\left(\alpha^2-1\right)+1\right)^2} d\left(\cos ^2 t\right) \\
+   & =\frac{\alpha^2}{\alpha^2-1} \int_0^\theta d \frac{1}{\cos ^2 t\left(\alpha^2-1\right)+1} \\
+   & =\frac{\alpha^2}{\alpha^2-1}\left(\frac{1}{\cos ^2 \theta\left(\alpha^2-1\right)+1}-\frac{1}{\alpha^2}\right) \\
+   & =\frac{\alpha^2}{\cos ^2 \theta\left(\alpha^2-1\right)^2+\left(\alpha^2-1\right)}-\frac{1}{\alpha^2-1}
+   \end{aligned}
+   $$
+
+   根据CDF反采样方式最终可以得到（uniform采样$\xi_1$ $\xi_2$）：
+
+   $$
+   \theta=\arccos \sqrt{\frac{1-\xi_1}{\xi_1 \left(\alpha^2-1\right)+1}}=\arctan \left(\alpha \sqrt{\frac{\xi_1}{1-\xi_1}}\right) \\
+   \phi = 2\pi \xi_2
+   $$
+
    7. phong lobe importance sampling推导：
    ![phong](./images/phong_importance.jpg)
 5. 对于image来说，如果直接用int去query第几个pixel，从理解上来说比较容易。但是如果需要用到float类型的index，则需要搞明白一点，若image space建一个二维坐标系，则img[0][0]这个pixel的中心为(0.5, 0.5)，而img[0][1]这个pixel的中心在(0.5, 1.5)。因此若需要用到float类型的inex（sample；这个project中利用hdr envmap生成direction），若要取到某个pixel，必须取其中心，这样才能更加准确。
@@ -69,6 +100,14 @@
       1 = \int D(m)(\vec{n} \cdot \vec{m})d\omega_m \\
       \Rightarrow dA = \int D(m)(\vec{n} \cdot \vec{m})dAd\omega_m
       $$
+
+      3. 常用表达式（GGX Normal Distribution）
+
+      $$
+      D_{G G X}(h, \alpha)=\frac{\alpha^2}{\pi\left((n \cdot h)^2\left(\alpha^2-1\right)+1\right)^2} \\
+      \alpha = roughness ^ 2
+      $$
+
    2. Shadowing-Masking Function $G(\vec{i}, \vec{o}, \vec{m})$
    ![G](./images/G.png)
       1. 作用：masking代表视线方向上有物体遮挡导致看不见，shadowing代表光线方向上有物体遮挡导致光线照射不到。因此G代表着visibility，综合表示物体到光源的visibility和人眼到物体的visibility，总体表示从入射方向射入的光有多少能够被人眼看到。其跟roughness有关，roughness值越大代表macrofacet表面越粗糙，越有可能遮挡。
@@ -86,7 +125,8 @@
 
       $$
       G(\mathbf{v}, \mathbf{l}, \mathbf{\alpha}) = G_1(\mathbf{l}, \mathbf{\alpha}) G_1(\mathbf{v}, \mathbf{\alpha}) \\
-      G_1(\mathbf{v}, \mathbf{\alpha}) = G_{GGX}(\mathbf{v}, \mathbf{\alpha}) = \frac{2(\mathbf{n} \cdot \mathbf{v})}{\mathbf{n} \cdot \mathbf{v} + \sqrt{\alpha^2 + (1-\alpha^2)(\mathbf{n} \cdot \mathbf{v})^2}}
+      G_1(\mathbf{v}, \mathbf{\alpha}) = G_{GGX}(\mathbf{v}, \mathbf{\alpha}) = \frac{2(\mathbf{n} \cdot \mathbf{v})}{\mathbf{n} \cdot \mathbf{v} + \sqrt{\alpha^2 + (1-\alpha^2)(\mathbf{n} \cdot \mathbf{v})^2}} \\
+      G(v, l, \alpha)=\frac{2(n \cdot l)}{n \cdot l+\sqrt{\alpha^2+\left(1-\alpha^2\right)(n \cdot l)^2}} \frac{2(n \cdot v)}{n \cdot v+\sqrt{\alpha^2+\left(1-\alpha^2\right)(n \cdot v)^2}}
       $$
 
 
@@ -170,23 +210,321 @@
       \Rightarrow f_s(\mathbf{i}, \mathbf{o}, \mathbf{n}) = \int f^m_s(\mathbf{i}, \mathbf{o}, \mathbf{m}) \frac{|(\mathbf{i} \cdot \mathbf{m})|}{|(\mathbf{i} \cdot \mathbf{n})|} \frac{|(\mathbf{o} \cdot \mathbf{m})|}{|(\mathbf{o} \cdot \mathbf{n})|} D(m) G(\mathbf{i}, \mathbf{o}, \mathbf{m}) d\omega_m
       $$
       3. 
-   5. Microsurface Specular BSDFs
+   5. Microsurface Specular BSDFs（推导方式1）
       1. 前提：每个microfacet都是一个完美的镜面。
       2. 推导
       4中的integral中每个microfacet镜面的BSDF$f_s^m$并没有显式地表达出来，在这里，我们将其显式表达，然后带入4中的式子，最终得到BRDF表达式。
 
-      通常的表达式为：   
+      $f_s^m(\mathbf{i}, \mathbf{o}, \mathbf{m})$通常的表达式为：   
+      $$
+      f_s^m(\mathbf{i}, \mathbf{o}, \mathbf{m})=\rho \frac{\delta_{\omega_o}(\mathbf{s}, \mathbf{o})}{|\mathbf{o} \cdot \mathbf{m}|}
       $$
 
+      其推导过程如下：
+      从$\omega_i$方向入射的radiance使得镜面面积元的irradiance为：
+      $$
+      d E=L_i|\vec{i} \cdot \vec{n}| \cdot d \vec{w}_i
       $$
 
-   6. 
-7. BlurPool：CNN不具有shift-invariant，使得微小的shift造成输出的剧烈变化，这是由于downsample时忽略了信号处理中的采样原则（需要利用低通滤波去除掉混叠的高频部分）。Blurpool能够缓解这种shift-variant，保证CNN对相同的图像内容输出的feature更加地相似，提高对图像的识别能力，也能做到anti-aliasing。
+      往$d \omega_o$立体角内辐射的radiance为：
+
+      $$
+      d L_o=d E \cdot f_s(\vec{i}, \overrightarrow{0}, \vec{m})
+      $$
+
+      射入面积元的总power为：
+
+      $$
+      \Phi_{\text {in }}=L_i|\vec{i} \cdot \vec{n}| \cdot d \vec{\omega}_i \cdot d A
+      $$
+      
+      从单位面积元往外辐射的irradiance为（一般的irradiance都以$d \omega_o$来算，但是这里由于为完美的镜面反射，因此所有能量集中到一个单一的方向上，因此需要以$\delta$函数来表示）：
+      $$
+      d M=\int d L_o \cdot|\vec{n} \cdot \vec{o}| \cdot \delta(\vec{s}, \vec{o}) \cdot d \vec{w}_o
+      $$
+
+      往出射方向辐射的总power为：
+      $$
+      \Phi_{\text {out }}=d M d A=\int d L_o \cdot|\vec{n} \cdot \vec{o}| \cdot \delta(\vec{s}, \vec{o}) \cdot d \vec{\omega}_o \cdot d A
+      $$
+
+      根据出射power=入射power即可得到上面的表达式。消去一些term后，delta函数会消失，但是由于只往一个单一方向辐射，因此也需要在BRDF中加入delta项表示这种单一方向的辐射。
+
+      现在要将$f_s^m(\mathbf{i}, \mathbf{o}, \mathbf{m})$从关于$\vec{o}$的函数变换为关于half vector $\vec{h}$的函数。$h(\vec{o})$是关于$\vec{o}$的函数，对于$f_s^m(\mathbf{i}, \mathbf{o}, \mathbf{m})$来说，从物理意义上来理解，除了delta function需要改成关于$\mathbf{h}$的函数，其它项都是constant不需要改变。虽然我们可以将delta function理解为若方向相同则为1，但是其是根据积分严格定义的，后续的推导中需要对其进行积分，因此在这里我们需要考虑将$\mathbf{o}$改为$\mathbf{h}(o)$之后的微元变化。那么我们首先考虑对$d \omega_h$进行积分（$\mathbf{s}$代表镜面的完美反射角度）：
+
+      $$
+      f_s^m(\mathbf{i}, \mathbf{s}, \mathbf{m})=\int_{\omega_h} \rho(\mathbf{i}, \mathbf{m}) \frac{\delta_{\omega_m}(\mathbf{h}(\mathbf{i}, \mathbf{o}), \mathbf{m})}{|\mathbf{o} \cdot \mathbf{m}|} d \omega_h \\
+      此时\mathbf{o} = \mathbf{s}，\  故\mathbf{h}=\mathbf{h}(\mathbf{i}, \mathbf{s}) \\
+      结果为 \\
+      f_s^m(\mathbf{i}, \mathbf{s}, \mathbf{m}) = \rho (\mathbf{i}, \mathbf{m}) \frac{1}{|\mathbf{s} \cdot \mathbf{m}|}
+      $$
+      
+      由于在上面的积分式子中，$\mathbf{i}$和$\mathbf{m}$都可以视为constant，因此上式可以简化为：
+
+      $$
+      f_s^m(\mathbf{i}, \mathbf{s}, \mathbf{m})=\int_{\omega_h} \rho(\mathbf{i}, \mathbf{m}) \frac{\delta_{\omega_m}(\mathbf{h}(\mathbf{o}))}{|\mathbf{o} \cdot \mathbf{m}|} d \omega_h 
+      $$ 
+
+      要将其转化为关于$d \omega_o$的积分需要算Jacobian：
+
+      $$
+      f_s^m(\mathbf{i}, \mathbf{s}, \mathbf{m})= \int_{\omega_o} \rho(\mathbf{i}, \mathbf{m}) \frac{\delta_{\omega_m}(\mathbf{h}(\mathbf{i}, \mathbf{o}), \mathbf{m})}{|\mathbf{o} \cdot \mathbf{m}|}\left\|\frac{\partial \omega_{\mathbf{h}}}{\partial \omega_{\mathbf{o}}}\right\| d \omega_o
+      $$
+
+      这是直接求了$\mathbf{s}$方向的BRDF值，BRDF function仍为：
+
+      $$
+      \rho(\mathbf{i}, \mathbf{m}) \frac{\delta_{\omega_m}(\mathbf{h}(\mathbf{i}, \mathbf{o}), \mathbf{m})}{|\mathbf{o} \cdot \mathbf{m}|}\left\|\frac{\partial \omega_{\mathbf{h}}}{\partial \omega_{\mathbf{o}}}\right\|
+      $$
+
+      可以算出Jacobian（见6中第二种推导方式）然后代入其中得到：
+
+      $$
+      f_r^m(\mathbf{i}, \mathbf{o}, \mathbf{m})=F(\mathbf{i}, \mathbf{m}) \frac{\delta_{\omega_m}\left(\mathbf{h}_{\mathrm{r}}, \mathbf{m}\right)}{4\left(\mathbf{i} \cdot \mathbf{h}_{\mathrm{r}}\right)^2}
+      $$
+
+      delta function是多元函数，在之前的积分中对变量$d \omega_o$进行积分时可将$\mathbf{m}$视为constant，后续的推导中需要对$d \mathbf{m}$进行积分。将该式代入4中的表达式，可以最终得到标准的Microfacet BRDF公式：
+      
+      $$
+      \begin{aligned}
+      f_s(\mathbf{i}, \mathbf{o}, \mathbf{n}) &= \int f^m_s(\mathbf{i}, \mathbf{o}, \mathbf{m}) \frac{|(\mathbf{i} \cdot \mathbf{m})|}{|(\mathbf{i} \cdot \mathbf{n})|} \frac{|(\mathbf{o} \cdot \mathbf{m})|}{|(\mathbf{o} \cdot \mathbf{n})|} D(m) G(\mathbf{i}, \mathbf{o}, \mathbf{m}) d\omega_m \\
+      &= \int F(\mathbf{i}, \mathbf{m}) \frac{\delta_{\omega_m}\left(\mathbf{h}_{\mathrm{r}}, \mathbf{m}\right)}{4\left(\mathbf{i} \cdot \mathbf{h}_{\mathrm{r}}\right)^2} \frac{|(\mathbf{i} \cdot \mathbf{m})|}{|(\mathbf{i} \cdot \mathbf{n})|} \frac{|(\mathbf{o} \cdot \mathbf{m})|}{|(\mathbf{o} \cdot \mathbf{n})|} D(m) G(\mathbf{i}, \mathbf{o}, \mathbf{m}) d\omega_m
+      \end{aligned}
+      $$
+
+      当$\omega_m=h_r$时，即可得到标准的microfacet specular BRDF公式。
+
+   6. Microsurface Specular BSDFs（推导方式2）
+
+   给定入射方向$\vec{i}$和出射方向$\vec{o}$，只有满足normal方向为half vector的microfacet能够把光线反射，这些microfacet的总面积为：
+
+   $$
+   d A\left(\omega_h\right)=D\left(\omega_h\right) d \omega_h d A
+   $$
+
+   若考虑遮挡，即得到visible area，其面积为：
+
+
+   $$
+   d A\left(\omega_h\right)=D\left(\omega_h\right) G d \omega_h d A
+   $$
+
+   射入这些microfacet的总power为（$d A^{\perp}$指的是这部分microfacet的面积在入射方向上的投影面积）：
+
+   $$
+   \begin{aligned}
+   d \Phi_i & =L_i\left(\omega_i\right) d \omega_i d A^{\perp}\left(\omega_h\right) \\
+   & =L_i\left(\omega_i\right) d \omega_i \cos \theta_h d A\left(\omega_h\right) \\
+   & =L_i\left(\omega_i\right) d \omega_i \cos \theta_h D\left(\omega_h\right) G d \omega_h d A
+   \end{aligned}
+   $$
+
+   从这些microfacet输出的总power为（乘上反射能量的比例）：
+
+   $$
+   d \Phi_o = \rho d \Phi_i \\
+   \because take \ Fresnel \ F \  as \ \rho \\
+   \therefore d \Phi_o = F d \Phi_i \\
+   $$
+
+   根据出射的radiance定义得：
+   $$
+   d L_o\left(\omega_o\right)=\frac{d \Phi_o}{d \omega_o \cos \theta_o d A}=\frac{L_i\left(\omega_i\right) d \omega_i \cos \theta_h D\left(\omega_h\right) GF d \omega_h d A}{d \omega_o \cos \theta_o d A}
+   $$
+
+   从macrofacet的BRDF定义来说：
+
+   $$
+   f_{\text {cook-torrance }}\left(\omega_i, \omega_o\right)=\frac{d L_o\left(\omega_o\right)}{d E_i\left(\omega_i\right)}=\frac{d L_o\left(\omega_o\right)}{L_i\left(\omega_i\right) \cos \theta_i d \omega_i}=\frac{\cos \theta_h D\left(\omega_h\right) GF d \omega_h}{\cos \theta_o \cos \theta_i d \omega_o}
+   $$
+
+   接下来需要算$\frac{d \omega_h}{d \omega_o}$，其数学意义是，当$\omega_o$变化$d \omega_o$时算出$\omega_h$变化的量$d \omega_h$，然后求比值即可。见下图。
+
+   ![domega](./images/domega.png)
+
+   根据solid angle的定义可以算出$d \omega_o$对应的面积$d A$为：
+
+   $$
+   d A = \frac{d \omega_o}{r^2} = d \omega_o
+   $$
+
+   其对应在$\vec{h_r}$所在的圆上的solid angle为：
+
+   $$
+   d \omega_h = \frac{d A'}{||\vec{h_r}|| ^2} = \frac{d A |\vec{o} \cdot h_r|}{||\vec{h_r}|| ^2} = \frac{ |\vec{o} \cdot h_r|}{||\vec{h_r}|| ^2} d \omega_o
+   $$
+
+   因为$\vec{h_r}$为单位向量$h_r$的带长度版本，因此：
+
+   $$
+   \vec{h_r} = sign(\vec{i} \cdot \vec{n})(\vec{i} + \vec{o}) = sign(\vec{i} \cdot \vec{n}) \cdot 2|\vec{o} \cdot h_r| h_r \\
+   d \omega_h = \frac{d A'}{||\vec{h_r}|| ^2} = \frac{d A |\vec{o} \cdot h_r|}{||\vec{h_r}|| ^2} = \frac{ |\vec{o} \cdot h_r|}{||\vec{h_r}|| ^2} d \omega_o \\
+   代入可得：
+   \frac{d \omega_h}{d \omega_o}=\frac{1}{4 \cos \theta_h}
+   $$
+
+   将$\frac{d \omega_h}{d \omega_o}$代入BRDF式子可得：
+
+   $$
+   f_{\text {cook-torrance }}\left(\omega_i, \omega_o\right)=\frac{F_r\left(\omega_o, \omega_h\right) D\left(\omega_h\right) G\left(\omega_i, \omega_o\right)}{4 \cos \theta_o \cos \theta_i}
+   $$
+
+7. Phong BRDF
+   1. 理论：基于lobe，即入射光线在反射时，若反射表面不是完美镜面，则所有出射方向都围绕在完美反射方向周围，并含有不同的能量分布，这种能量分布就是phong lobe对应的BRDF。由于光路可逆性可知，某一个出射方向的能量是由入射的一个lobe所决定，它们围绕在完美入射方向周围，并贡献不同的能量。
+   2. 表达式
+
+   $$
+   \begin{aligned}
+   f_r\left(\mathbf{x}, \omega_i, \omega_r\right) & =f_{r, d}\left(\mathbf{x}, \omega_i, \omega_r\right)+f_{r, s}\left(\mathbf{x}, \omega_i, \omega_r\right) \\
+   & =\rho_d \frac{1}{\pi}+\rho_s \frac{n+2}{2 \pi} \cos ^n \alpha
+   \end{aligned}
+   $$
+
+   其中$\rho_d$代表入射的能量有多少以diffuse的形式被反射出去，$\rho_s$代表入射的能量有多少以specular的形式被反射出去。当光线入射到表面时，一部分被reflected成为reflectance，一部分被transmitted成为transmittance，被transmitted的这部分光线进入物体表面，一部分被物体所吸收，一部分被再次反射出物体表面成为diffuse分量。因此$\rho_d + \rho_s \leq 1$而不是等于1，因为可能有一部分能量被吸收。
+
+8. BlurPool：CNN不具有shift-invariant，使得微小的shift造成输出的剧烈变化，这是由于downsample时忽略了信号处理中的采样原则（需要利用低通滤波去除掉混叠的高频部分）。Blurpool能够缓解这种shift-variant，保证CNN对相同的图像内容输出的feature更加地相似，提高对图像的识别能力，也能做到anti-aliasing。
+9. split sum approximation
+   1. 总原则：
+   对于radiance计算公式：
+
+   $$
+   L_o=\int_{\Omega} L_i(l) f(\alpha, v, n, l)\langle n, l\rangle d l
+   $$
+
+   如果想要将$L_i$单独从积分中提取出来，可以将积分分解为：
+
+   $$
+   L_o=L_p(v, n) \int_{\Omega} f(\alpha, v, n, l)\langle n, l\rangle d l
+   $$
+
+   那么我们可以获得只含有入射光的term：
+
+   $$
+   L_p(\alpha, v, n) \approx \frac{\int_{\Omega} L_i(l) f(\alpha, n, n, l)\langle n, l\rangle d l}{\int_{\Omega} f(\alpha, n, n, l)\langle n, l\rangle d l}
+   $$
+
+   这就是prefiltered lightmap最原始的推导公式，我们需要结合Monte Carlo一步步进行简化
+
+   2. 对于lambertion的diffuse分量计算irradiance map
+   对于lambertion来说：
+
+   $$
+   L_o = \frac{\rho}{\pi} \int_{\Omega} L_i(l) \langle n, l\rangle d l
+   $$
+
+   积分中已经不含有BRDF项，只含有light相关的term，因此可以认为1中的总原则公式就等于此式中的积分：
+
+   $$
+   L_p(v, n) = \int_{\Omega} L_i(l) \langle n, l\rangle d l 
+   $$
+
+   利用Monte Carlo进行importance sampling：
+
+   $$
+   L_p(v, n) = \frac{\frac{1}{N} \sum_{i=1}^{N} L_i cos \theta}{p(\omega_i)} = \frac{\frac{1}{N} \sum_{i=1}^{N} L_i cos \theta}{\frac{cos\theta}{\pi}} = \frac{\pi}{N} L_i
+   $$
+
+   对于lambertion来说，这些$L_i$的方向分布在surface normal为中心的hemisphere周围，因此对于每个surface来说，总的入射光应该取prefiltered map的normal方向的value。而prefiltered map可以对每个方向进行hemisphere上的weighted sum。
+
+   3. 对于phong lobe对应的BRDF来说：
+   其BRDF为：
+
+   $$
+   f_s = \frac{n + 2}{2 \pi} cos ^n \alpha
+   $$
+
+   其中$\alpha$为light direction与view direction关于normal的完美反射角之间的关系。
+   
+   <br />
+
+   从phong BRDF的公式来看，不管view direction对应的完美反射角为多少，对于同一个n，围绕在其周围的lobe形状都是完全一样的。
+
+   <br />
+
+   因此不管view direction是怎么样的，我们可以认为空间中每个方向都可能成为一个关于view direction和normal的完美反射角。因此我们可以以其为z轴建立局部坐标系，根据固定lobe的形状，算其weighted sum。在取得实际的view direction和normal后，可以根据它们算出完美的反射方向，然后以这个方向去query算好的prefiltered envmap来获得总的关于light的term。
+
+   <br />
+
+   根据1中的总原则公式：
+
+   $$
+   L_p(\alpha, v, n) \approx \frac{\int_{\Omega} L_i(l) \frac{n + 2}{2 \pi} cos ^n \alpha \langle n, l\rangle d l}{\int_{\Omega} \frac{n + 2}{2 \pi} cos ^n \alpha \langle n, l\rangle d l}
+   $$
+
+   以phong BRDF作为PDF进行Monte Carlo计算（由于我们是在local frame中计算这个式子，所以$\alpha=\theta$，其为光线与z轴的夹角）：
+
+   $$
+   L_p(\alpha, v, n) \approx \frac{\frac{\frac{1}{N} \sum_{1}^N L_i(l) \frac{n + 2}{2 \pi} cos ^n \theta cos \theta'}{\frac{n + 2}{2 \pi} cos ^n \theta}}{\frac{\frac{1}{N} \sum_1^N \frac{n + 2}{2 \pi} cos ^n \alpha cos \theta'}{\frac{n + 2}{2 \pi} cos ^n \theta}} = \frac{\sum_1^N L_i cos \theta'}{\sum_1^N cos \theta'}
+   $$
+
+   <br />
+
+   需要注意的是这里的$cos \theta'$指的是入射光线与surface normal的夹角，但是由于我们实现不知道surface normal，且对于不同的normal其$\theta'$不同，因此在这里做了一个近似，即$\theta'=\theta$，因为本来就是对$cos \theta$的一个weighted sum。在这样等效后，应该有人验证了与直接渲染得到的结果误差很小，人眼几乎看不出，因此采用了这种方法去做估计。（证明了在graphic中只要看起来合理就是合理的）
+
+   根据这个公式可以把原来的envmap的每一个方向上的radiance存储为根据lobe prefiltered后的结果，那么就可以根据normal和view direction算出的完美light方向去query prefiltered envmap来获得其$L(\mathbf{v}, \mathbf{n})$。
+
+   4. 对于microfacet对应的BRDF来说：
+   在phong lobe中，由于BRDF本身就规定了对于同一个n，因此所有的lobe形状完全一样，但是在microfacet中，对于某一个normal的macrosurface来说，不同的view direction对应的围绕在完美incident light的lobe形状是不同的，所以没办法像phong lobe一样自然地去直接计算。
+
+   <br />
+
+   为了像phong lobe一样能够类似地计算，unreal engine也假设lobe形状都是相同的，而这个形状是根据microfacet BRDF去规定的。其假设这个lobe的形状为，当normal和view direction相同时，入射光线所形成的lobe形状（此时完美的镜面反射方向也等于normal方向，即$\mathbf{n}=\mathbf{v}=\mathbf{i}$，而能够产生贡献的light direction围绕在这个完美方向周围），当物体表面的roughness确定时，这个lobe的形状就是确定的，其用于整个map的prefilter。可以通过改变roughness来改变这个lobe的形状。
+
+   <br />
+
+   那么我们就可以像phong lobe一样的方式去计算（此时也放在一个local frame中计算，也像phong lobe中一样将原来光线与surface normal的$cos \theta$近似为光线与lobe中心的夹角）：
+   ![lobe](./images/lobe.png)
+
+   $$
+   f_s(\mathbf{\omega_o}, \mathbf{\omega_i}, \mathbf{N}) = \frac{F D G}{4\left(N \cdot \omega_o\right)\left(N \cdot \omega_i\right)} \\
+   近似为上述lobe:\\  
+   R=N=V（将原来的V和N算出来的完美入射角方向R作为像phong \ lobe一样的z轴，后续的计算都围绕这个z轴，那么这个lobe的形状对于同一个roughness都是确定的了）\\
+   \begin{aligned}
+   L_p(\alpha, v, n) &= \frac{\int_{\Omega} L_i(l) f_s(\mathbf{R}, \mathbf{\omega_i(R)}, \mathbf{R}) \langle R, l \rangle dl}{\int_{\Omega} f_s(\mathbf{R}, \mathbf{\omega_i(R)}, \mathbf{R}) \langle R, l \rangle dl} \\
+   &= \frac{\frac{1}{N} \sum_k^N \frac{D\left(\omega_h^{(k)}\right) F\left(\omega_o \cdot \omega_h^{(k)}\right) G\left(\omega_o, \omega_i^{(k)}\right) L_i\left(\omega_i^{(k)}\right)\left(n \cdot \omega_i^{(k)}\right)}{4\left(\omega_o \cdot n\right)\left(\omega_i^{(k)} \cdot n\right) p\left(\omega_i^{(k)}\right)}}{\frac{1}{N} \sum_k^N \frac{D\left(\omega_h^{(k)}\right) F\left(\omega_o \cdot \omega_h^{(k)}\right) G\left(\omega_o, \omega_i^{(k)}\right)\left(n \cdot \omega_i^{(k)}\right)}{4\left(\omega_o \cdot n\right)\left(\omega_i^{(k)} \cdot n\right) p\left(\omega_i^{(k)}\right)}} \\
+   &= \frac{\sum_k^N \frac{D\left(\omega_h^{(k)}\right) F\left(\omega_o \cdot \omega_h^{(k)}\right) G\left(\omega_o, \omega_i^{(k)}\right) L_i\left(\omega_i^{(k)}\right)}{4\left(\omega_0 \cdot n\right) \frac{D\left(\omega_h^{(k)}\right)\left(\omega_h^{(k)} \cdot n\right)}{4\left(\omega_0 \cdot \omega_h^{(k)}\right)}}}{\sum_k^N \frac{D\left(\omega_h^{(k)}\right) F\left(\omega_o \cdot \omega_h^{(k)}\right) G\left(\omega_o, \omega_i^{(k)}\right)}{4\left(\omega_0 \cdot n\right) \frac{D\left(\omega_h^{(k)}\right)\left(\omega_h^{(k)} \cdot n\right)}{4\left(\omega_0 \cdot \omega_h^{(k)}\right)}}} \\
+   &= \frac{\sum_k^N \frac{F\left(\omega_o \cdot \omega_h^{(k)}\right) G\left(\omega_o, \omega_i^{(k)}\right) L_i\left(\omega_i^{(k)}\right)\left(\omega_o \cdot \omega_h^{(k)}\right)}{\omega_h^{(k)} \cdot n}}{\sum_k^N \frac{F\left(\omega_o \cdot \omega_h^{(k)}\right) G\left(\omega_o, \omega_i^{(k)}\right)\left(\omega_o \cdot \omega_h^{(k)}\right)}{\omega_h^{(k)} \cdot n}} \\
+   &= \frac{\sum_k^N \frac{F\left(\omega_o \cdot \omega_h^{(k)}\right) G_1\left(\omega_i^{(k)}\right) G_1\left(v\right) L_i\left(\omega_i^{(k)}\right)\left(\omega_o \cdot \omega_h^{(k)}\right)}{\omega_h^{(k)} \cdot n}}{\sum_k^N \frac{F\left(\omega_o \cdot \omega_h^{(k)}\right) G_1\left(\omega_i^{(k)}\right) G_1\left(v\right) \left(\omega_o \cdot \omega_h^{(k)}\right)}{\omega_h^{(k)} \cdot n}} \\
+   &= \frac{\sum_k^N \frac{F\left(\omega_o \cdot \omega_h^{(k)}\right) G_1\left(\omega_i^{(k)}\right) L_i\left(\omega_i^{(k)}\right)\left(\omega_o \cdot \omega_h^{(k)}\right)}{\omega_h^{(k)} \cdot n}}{\sum_k^N \frac{F\left(\omega_o \cdot \omega_h^{(k)}\right) G_1\left(\omega_i^{(k)}\right)\left(\omega_o \cdot \omega_h^{(k)}\right)}{\omega_h^{(k)} \cdot n}} \\
+   由于R=N=V \\
+   &= \frac{\sum_k^N F\left(\omega_o \cdot \omega_h^{(k)}\right) G_1\left(\omega_i^{(k)}\right) L_i\left(\omega_i^{(k)}\right)}{\sum_k^N F\left(\omega_o \cdot \omega_h^{(k)}\right) G_1\left(\omega_i^{(k)}\right)} \\
+   \end{aligned} \\
+   在这样的lobe下，\ \omega_o 与 \omega_h的夹角必然小于等于\frac{\pi}{2}（当lobe为hemisphere时为\frac{\pi}{2}），根据Fresnel的函数形状可知，小于\frac{\pi}{2}时其几乎为constant，因此可以消去。 \\
+   \begin{aligned}
+   L_p(\alpha, v, n) &= \frac{\sum_k^N F\left(\omega_o \cdot \omega_h^{(k)}\right) G_1\left(\omega_i^{(k)}\right) L_i\left(\omega_i^{(k)}\right)}{\sum_k^N F\left(\omega_o \cdot \omega_h^{(k)}\right) G_1\left(\omega_i^{(k)}\right)} \\
+   &= \frac{\sum_k^N L\left(\omega_i^{(k)}\right) G_1\left(\omega_i^{(k)}\right)}{\sum_k^N G_1\left(\omega_i^{(k)}\right)}
+   \end{aligned}
+   $$
+
+   <br />
+
+   关于上式中以D(h)作为PDF推导的$p(\omega_i)$的表达式：
+
+   由于D是关于half vector的函数，而我们的PDF需要的是关于$\omega_i$的函数，而D是PDF需要参与积分，所以我们要算correction factor，即$\frac{d \omega_h}{d \omega_i}$。在推导microfacet时已经介绍过了推导方法，不再赘述。可以得知：
+
+   $$
+   d \omega_h=\frac{d \omega_i}{4 \cos \theta_h} \\
+   \int_{\mathcal{H}^2} |\omega_h \cdot n| D\left(\omega_h(\omega_i)\right) \frac{d \omega_i}{4 |\omega_h \cdot \omega_o|}=1 \\
+   \therefore p(\omega_i) = \frac{|\omega_h \cdot n| D(\omega_h)}{4 |\omega_h \cdot \omega_o|}
+   $$
+
+   <br />
+
+   Fresnel的function形状: https://www.desmos.com/calculator/u5unsfrcbe?lang=zh-CN
+
+   <br />
+
+   在unreal engine中，将$G_1$近似为$\omega_i \cdot R$，这种近似带来了很大的速度提升，且根据实际效果对比，发现与直接渲染得到的效果差不多，故沿用这种近似（看起来合理的就是合理的）。
+
+10. 
 
 ## 可调用的api
 1. image space上的bilinear sample（numpy版本，torch可用grid_sample）。
 2. 对hdr image在w维度上进行rotation。
 3. cv2读取hdr。
+4. 使用torchvision VGG的方式。
+5. 获得image bounding box范围的方式。
+6. 利用VGG的1-5层activation function结果算loss的方式。
 
 
 ## 犯过的错误
