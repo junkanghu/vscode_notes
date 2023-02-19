@@ -398,6 +398,7 @@ ssh-copy-id -i "$PUBKEYPATH" "$USER_AT_HOST"
 du -s # 显示当前目录的总大小
 du -s * # 显示当前目录下每个目录或文件的总大小
 du -sh # 显示当前目录总大小（以KB、MB等为单位）
+du -sh normal # 显示normal目录总大小（以KB、MB等为单位）
 du -sh file.txt # 显示file.txt文件的大小
 ```
 
@@ -556,4 +557,14 @@ ControlPersist yes
 ``` shell
 stat -c '%A %a %n' a.txt # 查看a.txt数字权限 775
 stat -c '%A %a %n' * # 查看当前目录下所有文件数字权限
+```
+
+## linux下进行mount
+``` shell
+sudo sshfs -o allow_other,follow_symlinks,IdentityFile=~/.ssh/id_rsa hujunkang@10.0.1.6:/ ~/mnt/
+```
+若要重新进行mount，其它都不变，只加一个reconnect
+
+``` shell
+sudo sshfs -o reconnect,allow_other,follow_symlinks,IdentityFile=~/.ssh/id_rsa hujunkang@10.0.1.6:/ ~/mnt/
 ```

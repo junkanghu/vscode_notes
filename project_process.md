@@ -1,4 +1,6 @@
-## Lumos复现
+# Lumos: Learning to Relight Portrait Images via a Virtual Light Stage and Synthetic-to-Real Adaptation
+[[toc]]
+
 
 ## 待思考或解决的问题
 1. 数据读取部分
@@ -530,6 +532,7 @@
 ## 犯过的错误
 1. 不管是利用np还是torch，最好一直保持数据的dtype为float32。本次出错的地方在于，没有限制每个数据都为float32，导致获得的filtered_envmap为float64，将其存成hdr图像时，由于hdr默认格式为float32，所以不匹配，最终导致存取下来的hdr图像所有pixel值都为0，没有内容。
 2. 当需要用到某个term作为pdf时，必须检查其是否大于0，检查其cdf是否为1。在这个project中，犯过的错误为直接用$cos(\theta)$作为pdf，但是其积分为$\pi$。
+3. 使用python的logging时，有时候若出现怎么都找不出来的错误，考虑一下是否third party库中对logging进行了重新配置。在这个project中碰到了*xiuminglib*对logging进行重新配置导致怎么都无法正确使用logging。
 
 ## 好用的工具
 1. desmos：非常简易地画函数图像的工具，可以用这个工具画出函数，然后对其值有一个直观的了解，在这个project中，这个工具用于画出Fresnel-Schlick，发现其位于$\frac{\pi}{4}$内时的值非常小，可以用常数来表示。

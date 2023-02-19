@@ -9,6 +9,7 @@
    在安装时指定cuda version。进入（https://pytorch-geometric.com/whl/torch-1.x.x+cuxxx.html）（cu111代表cuda version 11.1），下载对应的whl文件到本地目录，然后pip install xxx.whl即可
 
 4. 当torch或者numpy出现nan时，首先考虑是不是除0，查看代码所有含有/的地方，在分母处加上一个小的数，如1e-5，防止除0.
+5. 使用python的logging时，有时候若出现怎么都找不出来的错误，考虑一下是否third party库中对logging进行了重新配置。
 
 ## about system
 1. 文件名不要带空格：首先，带空格无法在sell中表示；其次，带空格无法在代码中引用；最后，带空格的文件若是参与pc之间的共享，会造成传输识别错误或极度延迟。
@@ -94,7 +95,7 @@ export no_proxy=http://gitlab.idr.ai
 ## ubuntu下载google driver上的public文件
 一、利用wget（可能会下不了）
 1. 右键点击想要下载的文件，点击*获取链接*，然后点击*复制链接*。
-2. 链接的格式一般如```https://drive.google.com/file/d/10clmresw01amm1PaYeGjA8zsEBew-eX3/view?usp=share_link```，我们需要的是fileid=```10clmresw01amm1PaYeGjA8zsEBew-eX3```。
+2. 链接的格式一般如```https://drive.google.com/file/d10clmresw01amm1PaYeGjA8zsEBew-eX3/view?usp=share_link```，我们需要的是fileid=```10clmresw01amm1PaYeGjA8zsEBew-eX3```。
 3. 然后在terminal运行：
 ```shell
 wget --no-check-certificate 'https://docs.google.com/uc?export=download&id=FILEID' -O FILENAME
@@ -118,8 +119,16 @@ curl -H "Authorization: Bearer YYYYY" https://www.googleapis.com/drive/v3/files/
 
 例如
 ``` shell
+ curl -H "Authorization: Bearer ya29.a0AX9GBdWFPjrWOcfNgEKaho4azox3ifXBfTSaOeO8LxMXJx_AgwumRCLTDIwL0xFBIQx4D3LdqkDRMrSW2qgeq9NyJTEhTA5nzU07REjPkrpo5J3_r1G7NddxQ37mbWfOC66Mq-Gi5eoGjBwqaDvIxbbM0VYVaCgYKAdYSARISFQHUCsbCkw2SFqJf7z2hbq5-wzVuEQ0163" https://www.googleapis.com/drive/v3/files/1aVhXp2TPBNCPCEoIdPxvbxc841NEzxdG?alt=media -o   hro.zip
+```
+
+以上是在第一次下载时候的命令，如果中途断掉了，需要断点续传，则需要指定-C。
+
+``` shell
  curl -C - -H "Authorization: Bearer ya29.a0AX9GBdWFPjrWOcfNgEKaho4azox3ifXBfTSaOeO8LxMXJx_AgwumRCLTDIwL0xFBIQx4D3LdqkDRMrSW2qgeq9NyJTEhTA5nzU07REjPkrpo5J3_r1G7NddxQ37mbWfOC66Mq-Gi5eoGjBwqaDvIxbbM0VYVaCgYKAdYSARISFQHUCsbCkw2SFqJf7z2hbq5-wzVuEQ0163" https://www.googleapis.com/drive/v3/files/1aVhXp2TPBNCPCEoIdPxvbxc841NEzxdG?alt=media -o   hro.zip
 ```
+
+-C指定的是断点续传从哪个Byte开始继续传输，可以指定具体的Byte位置。更为方便的是直接用```-```，其代表自动找到续传位置进行传输。
 
 ## envmap相关内容
 一、spherical envmap

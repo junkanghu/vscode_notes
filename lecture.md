@@ -1,7 +1,5 @@
-[toc]
-# Lecture Notes
-## games101 
-### lecture 15
+# Games101 
+## lecture 15
 1. irradiance是一块面积dA上获得的power($\Phi$)，其目的在于解释某一块面积接收到的能量；radiance是一块面积上往某一个方向角辐射的能量（既可以是朝向这块面积，代表接受能量；也可以是远离这块面积，代表辐射能量），在radiance的基础上加了方向角，又因为方向角与该面积的法线方向有夹角$\theta$，所以有一个cos$\theta$的乘积。（irradiance理解为某一块面积接收到的光的能量，radiance理解为光传播时的某个方向的光能对一块有方向的面积辐射的能量）
    ![irradiance](./images/irradiance-radiance.png)
 2. BRDF(bidirectional reflectance distribution function)：代表了某个入射方向对某个出射方向radiance的贡献。
@@ -19,7 +17,7 @@
    ![rendering](./images/rendering_equation.png)
 9.  
 
-### lecture 16
+## lecture 16
 1. 蒙特卡罗积分（Monte Carlo Integral）
    ![monte_carlo](./images/monte_carlo.png)
    ![monte_uni](./images/monte_carlo_uni.png)
@@ -68,7 +66,7 @@
 6. extensions
    ![extensions](./images/extensions.png)
 
-### lecture 17
+## lecture 17
 1. BRDF=Material(BRDF决定了物体表面的材质，因为它解释了光的反射规则)
 2. 漫反射表面不吸收能量，入射的光和出射的光能量相同，即irradiance守恒（L_in=L_out）
    ![diffuse](./images/diffuse_equation.png)
@@ -134,7 +132,7 @@
             3. 
     10. 
 
-### lecture 18
+## lecture 18
 1. Biased & Unbiased Monte Carlo Estimators
    1. Unbiased即为无偏的，即估计方法的期望就是正确值
    2. biased即为有偏的，其期望可以通过无限采样逼近正确值

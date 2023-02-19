@@ -318,7 +318,7 @@ In this figure, under the single viewpoint condition, algorithms without computi
 ![nerf-w](./images/nerf-w.png)
 
 1. 最终输出的rgb分为两个分量：static head、transient head。
-2. static：在NeRF输出$/sigma$和$z(t)$（feature vector）后，加入一个latent apperance code来建模每张图片单独的光照条件（每张照片都有一个appearance code，trainable，意味着只有训练数据才会有code。在test时，可对不同的code进行插值来获得新的code，或者直接随机一个code，实验证明这只会改变光照条件，不会改变geometry）。
+2. static：在NeRF输出$\sigma$和$z(t)$（feature vector）后，加入一个latent apperance code来建模每张图片单独的光照条件（每张照片都有一个appearance code，trainable，意味着只有训练数据才会有code。在test时，可对不同的code进行插值来获得新的code，或者直接随机一个code，实验证明这只会改变光照条件，不会改变geometry）。
 3. transient：如上图一样在每个sample点处再生成一个transient的量，其volume rendering同static分量相同。最终的rgb值由static分量和transient分量线性叠加。
 4. uncertainty：$\beta$是由MLP产生的。本方法对uncertainty的建模认为，每个pixel的颜色值遵循正态分布，每个pixel在当前训练阶段预测的颜色值是正态分布的均值，然后这个pixel的variance值就是$\beta^2$。variance值越大代表当前pixel的值不太稳定，其是不可靠的pixel，在计算loss时应该被排除在外。一条ray上的每个sample点都有一个$\beta_i(t)$，然后对一条ray进行alpha compositing才能获得这条ray的variance $\beta_i$。
 5. loss
@@ -333,6 +333,10 @@ In this figure, under the single viewpoint condition, algorithms without computi
 如果只有static，那么空间中的object的位置是固定的，每个location的density也是固定的。而有了transient后，其在原来的static基础上相当于在scene中的某个location放了新的object，因此除了新object所在的位置，其他的density保持与static时一样，而新object位置的density由于object的存在而变大了。因此在算transmittance时，要把static和transient各自的density相加，理想的情况是static density就是代表没有transient object时的density，而transient density除了有新object的地方，其他地方的density几乎为0（没有在这些地方加入新的particle），而有新object地方的density在static density中几乎为0，加上了transient density后总量变大了。这就造成scene中，如果有transient遮挡了static部分，由于新obejct处的density很大，计算transmittance时，新object后面的sample point的transmittance会非常小，即只有transient处的sample point对ray rgb有贡献，而后面的static object没有贡献，这就可以解释新object遮挡了static scene中的内容。
 2. 为什么uncertainty能够work？
 文中说uncertainty的作用是减少含有transient的pixel对于loss的贡献值，以使其梯度减小，这使得不含有transient的表示static scene的pixel的贡献较大。首先因为transient是image-dependent的，即每张image张除了static scene的内容是不变的（只是改变了view point），transient的量有可能在每张image中都不相同，因此为了model这种diversity，给每张image一个transient code（在static part中也有一个code，其是appearance code）以model当前image中的transient。这个transient code使得transient Nerf能够随着其变化（对于当前image，相当于对当前image中的transient object建了一个Nerf；对另一张image，对其transient object建了另一个Nerf。这两个Nerf并不是通过建立两组MLPs来实现，而是通过1组MLP配合不同的code实现，输入不同的code代表不同组MLP之间的切换）。
+
+<br />
+
+transient ray上的每个sample point的$\beta_t$的大小应该是与transient density一致的，即transient density越大的点其$\beta$越大。因此一条ray上属于static部分的point的uncertainty应该趋向于0（因为其是static的，方差不大，即color几乎不会变，但是transient由于occluder会变，因此方差较大），而属于transient部分的point的uncertainty较大，因此在alpha compositing时，属于transient部分的point的贡献较大。这个pixel的uncertainty应该就是为了explicitly指示出哪些pixel含有transient分量，由于我们的最终目的是获得static部分的density和color，含有transient分量的pixel，其对于static部分的density和color学习几乎起不到什么作用，因为它看不到static部分，因此这些pixel从理想上来说应该不用作算loss，用这个uncertainty可以将这些pixel的相对loss weight调低，从而降低对网络参数的控制能力。这个transient head不仅能够将transient和static分离开，在将它们分离开来后，还能够控制loss的weight，使得static部分优化得更好。
 
 ---
 
@@ -817,3 +821,39 @@ Due to the high cost of previous hardware, PolFace proposes to capture face data
 
 4. specular normal推导
 ![]
+
+
+## Learning to Reconstruct Shape and Spatially-Varying Reflectance from a Single Image
+
+### class
+image-to-image
+
+### setting
+1. light: 
+   1. point light collocated with the camera
+   2. environment light(SH)
+
+### brief summary
+xxx trains an image-to-image pipeline which first gets the coarse results from three bounces, then refines it by cascade structure.. 
+
+## De-rendering 3D Objects in the Wild
+
+### class
+image-to-image
+unsupervised
+
+### innovation
+1. 第一次以unsupervised方法在in-the-wild数据上做inverse rendering。
+
+### brief summary
+First estimate the coarse geometry, material, light, then use the coarse information as the pseudo supervision to bootstrap the decomposition.
+
+### thinking process
+1. inverse rendering是一个ambiguous的问题，light、material和geometry的不同组合都能得到相同的结果，因此想要decompose必须要一些hints去引导学习。直接使用supervised的当然更好，但是要在in-the-wild上做需要特别的设计。
+2. 作者首先进行一些假设简化rendering过程，然后预估coarse的各个components，然后以它们作为一些监督去引导decompose，但是由于之前的假设以及简化，渲染的结果可能不够好，因此将足够的flexibility赋予网络克服。
+
+### methodology
+1. 通过off-the-shell方法获得depth，然后由depth获得normal。
+2. 简化rendering过程为phong-model（每张image share同一个scalar ambient light intensity、同一个scalar specularity intensity、同一个scalar shiness $\alpha$，建模一个directional light优化其light intensity和direction），light被建模为ambient light和directional light。
+3. 这样设计GAN的原因：在PBR中，即使已知light的所有信息，还是有可能在normal（geometry）和material之间产生ambiguity（$f(\omega_i, \omega_o) <\vec{n} \cdot l>$），$f$和$cos\theta$之间不同的组合都可以产生相同的结果。直接对图像加image loss无法克服这种ambiguity，导致material和geometry无法较好地decomposition，一种比较明显地反映decomposition不好的现象就是当改变light时，渲染出来的图像有很多artifacts。作者发现改变light方向是导致这种artifacts的最主要因素，因此他从light direction入手。以estimated light direction和randomly sampled light direction分别做渲染，用GAN使得任意方向的渲染更像是resonable渲染结果。这就使得material和geometry能够估计地更加准确，因为任意方向的light都能生成好的结果的唯一可能就是它们估计地准确。作者考虑到用自己定义的rendering pipeline可能本来就会引入artifacts，所以他不用gt image来作为positive样本，防止discriminator将pipeline本身的不足作为判别是否为好的样本的依据。
+
